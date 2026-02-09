@@ -1,0 +1,3429 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나의 마음 일기장 (감성 UI/UX)</title>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<link
+	href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap"
+	rel="stylesheet">
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/calendar.css">
+<script
+	src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+<link rel="icon" type="image/x-icon" href="/img/휴식하는도닥이.png">
+<style>
+/* 대시보드 스타일 */
+.dashboard-card {
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.dashboard-section {
+    background: #fff;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    height: 100%;
+}
+.dashboard-section .section-title {
+    color: #555;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #eee;
+}
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+.activity-log .activity-item {
+    padding: 0.75rem;
+    border-left: 3px solid #ddd;
+    margin-bottom: 0.5rem;
+    background: #f9f9f9;
+    border-radius: 0 8px 8px 0;
+    transition: background 0.2s;
+}
+.activity-log .activity-item:hover {
+    background: #f0f0f0;
+}
+.activity-log .activity-item.mood-joy { border-left-color: #FFD700; }
+.activity-log .activity-item.mood-sad { border-left-color: #4169E1; }
+.activity-log .activity-item.mood-anger { border-left-color: #DC143C; }
+.activity-log .activity-item.mood-anxiety { border-left-color: #FFA500; }
+.activity-log .activity-item.mood-depression { border-left-color: #483D8B; }
+.activity-log .activity-time {
+    font-size: 0.75rem;
+    color: #888;
+}
+.activity-log .activity-name {
+    font-weight: 600;
+    color: #333;
+}
+.activity-log .activity-title {
+    font-size: 0.9rem;
+    color: #666;
+}
+#dashSevereTable tbody tr {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#dashSevereTable tbody tr:hover {
+    background: #fff5f5;
+}
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.status-badge.severe { background: #ffebee; color: #c62828; }
+.status-badge.warning { background: #fff3e0; color: #e65100; }
+.status-badge.normal { background: #e8f5e9; color: #2e7d32; }
+</style>
+</head>
+<body>
+
+	<img src="/img/휴식하는도닥이.png" alt="휴식하는 도닥이"
+		class="dodak-bg-element dodak-float-1">
+	<img src="/img/앉아서독서하는도닥이.png" alt="독서하는 도닥이"
+		class="dodak-bg-element dodak-float-2">
+	<img src="/img/문서보는도닥이.png" alt="문서보는 도닥이"
+		class="dodak-bg-element dodak-float-3">
+	<img src="/img/활짝웃는도닥이.png" alt="웃는 도닥이"
+		class="dodak-bg-element dodak-float-4">
+	<img src="/img/구름도닥이.png" alt="구름 위 도닥이"
+		class="dodak-bg-element dodak-float-5">
+	<img src="/img/생각하는도닥이.png" alt="생각하는 도닥이"
+		class="dodak-bg-element dodak-float-6">
+
+	<nav
+		class="navbar navbar-expand-lg fixed-top custom-navbar shadow-sm show-navbar">
+		<div class="container-fluid app-container" id="menucon"
+			style="display: none;">
+
+			<button class="navbar-toggler" type="button"
+				data-bs-toggle="collapse" data-bs-target="#navbarNav"
+				aria-controls="navbarNav" aria-expanded="false"
+				aria-label="Toggle navigation" style="border: none;">
+				<i class="bi bi-list" style="font-size: 1.8rem; color: #6c757d;"></i>
+			</button>
+
+			<div class="collapse navbar-collapse" id="navbarNav">
+
+				<ul class="nav nav-pills me-auto" id="mainTab" role="tablist">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link custom-nav-link active" id="home-tab"
+							data-bs-toggle="tab" data-bs-target="#home-panel" type="button"
+							role="tab" aria-controls="home-panel" aria-selected="true">
+							<img src="/img/dodak.png" alt="홈" class="nav-tab-icon"> 홈
+						</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link custom-nav-link" id="dashboard-tab"
+							data-bs-toggle="tab" data-bs-target="#dashboard-panel" type="button"
+							role="tab" aria-controls="dashboard-panel" aria-selected="false">
+							<img src="/img/생각하는도닥이.png" alt="대시보드" class="nav-tab-icon"
+								style="width: 50px;"> 대시보드
+						</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link custom-nav-link" id="stats-tab"
+							data-bs-toggle="tab" data-bs-target="#stats-panel" type="button"
+							role="tab" aria-controls="stats-panel" aria-selected="false">
+							<img src="/img/문서보는도닥이.png" alt="통계" class="nav-tab-icon"
+								style="width: 50px;"> 이달의 마음통계
+						</button>
+					</li>
+
+					<li class="nav-item" role="presentation">
+						<button class="nav-link custom-nav-link" id="list-tab"
+							data-bs-toggle="tab" data-bs-target="#list-panel" type="button"
+							role="tab" aria-controls="list-panel" aria-selected="false">
+							<img src="/img/앉아서독서하는도닥이.png" alt="리스트" class="nav-tab-icon"
+								style="width: 50px;"> 환자 일기 리스트
+						</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link custom-nav-link" id="mypage-tab"
+							data-bs-toggle="tab" data-bs-target="#mypage-panel" type="button"
+							role="tab" aria-controls="mypage-panel" aria-selected="false">
+							<img src="/img/활짝웃는도닥이.png" alt="도닥이 마이페이지 아이콘"
+								style="height: 24px; width: auto; margin-right: 5px; vertical-align: middle;">
+							마이페이지
+						</button>
+					</li>
+
+				</ul>
+				<li class="nav-item ms-auto danger-alert-container">
+					<a class="nav-link text-danger" href="#" id="dangerAlertIcon">
+						<i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2em"	title="주의: 심각한 부정적 기록 알림"></i>
+					</a>
+
+					<ul class="danger-list-content" id="dangerAlertList">
+						<h6 class="dropdown-header text-danger">🚨 심층 면담 필요 환자</h6>
+						<li><span class="dropdown-item text-muted">로딩 중...</span></li>
+					</ul>
+				</li>
+				<div class="d-flex ms-auto">
+					<a href="/logout"
+						class="btn btn-sm btn-outline-secondary me-2 login-btn"> <i
+						class="bi bi-box-arrow-in-right me-1"></i> 로그아웃
+					</a>
+				</div>
+
+
+			</div>
+
+		</div>
+	</nav>
+
+	<div class="app-container">
+		<div class="tab-content" id="mainTabContent" >
+
+			<div class="tab-pane fade show active" id="home-panel"
+				role="tabpanel" aria-labelledby="home-tab">
+				<div class="app-card home-intro-card position-relative">
+					<h2 class="text-center fw-bold mb-5" style="color: #6c757d;">
+						DODAK: 일상을 '도닥'여주는 마음 기록 웹</h2>
+
+					<img src="/img/음료먹는도닥.png" alt="음료 마시는 도닥이"
+						class="dodak-local-element dodak-home-corner-1">
+
+					<ul
+						class="nav nav-tabs nav-tabs-custom justify-content-center mb-4"
+						id="homeTabs" role="tablist">
+
+						<li class="nav-item" role="presentation">
+							<button class="nav-link active" id="mascot-tab"
+								data-bs-toggle="tab" data-bs-target="#mascot-pane" type="button"
+								role="tab" aria-controls="mascot-pane" aria-selected="true">
+								<i class="bi bi-emoji-heart-eyes me-2"></i> 마스코트 소개
+							</button>
+						</li>
+
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="project-tab" data-bs-toggle="tab"
+								data-bs-target="#project-pane" type="button" role="tab"
+								aria-controls="project-pane" aria-selected="false">
+								<i class="bi bi-journal-text me-2"></i> 프로젝트 설명
+							</button>
+						</li>
+					</ul>
+
+					<div class="tab-content" id="homeTabContent">
+
+
+
+						<div class="tab-pane fade show active" id="mascot-pane"
+							role="tabpanel" aria-labelledby="mascot-tab">
+							<img src="/img/구름도닥이.png" alt="떠있는 도닥이"
+								class="dodak-local-element"
+								style="position: absolute; top: 10px; left: 50px; width: 150px; opacity: 0.85; z-index: 10;">
+
+							<div class="row justify-content-center align-items-center g-4">
+
+								<div class="col-12 col-md-4 d-flex justify-content-center">
+									<div class="dodak-main-image-card">
+										<img src="/img/활짝웃는도닥이.png" alt="도닥이 마스코트"
+											class="img-fluid rounded-3 shadow-sm p-2"
+											style="max-height: 250px;">
+									</div>
+								</div>
+
+								<div
+									class="col-12 col-md-8 dodak-intro-text text-center text-md-start">
+									<h3 class="fw-bold mb-3" style="color: var(--text-color);">
+										<span style="color: var(--accent-color);">✨ 따뜻한 동행:</span>
+										마스코트 도닥이를 소개합니다!
+									</h3>
+
+									<p class="lead" style="color: #6a6a6a; margin-bottom: 1rem;">
+										DODAK의 다정한 마스코트 **도닥이**가 당신의 **이야기**를 기다립니다.</p>
+
+									<p style="color: var(--text-color);">도닥이는 항상 작은 스카프를 두르고
+										다니며, 사용자님의 **'마음 일기'**를 가장 소중히 여기는 다람쥐입니다. 단순한 기록을 넘어, **감정의
+										변화**와 **숨겨진 마음의 소리**를 귀 기울여 듣는 것이 도닥이의 중요한 역할입니다.</p>
+									<p style="color: var(--text-color);">매일의 기록을 통해 당신의 감정을
+										분석하고, 필요한 순간에 **따뜻한 배경 음악**이나 **맞춤형 힐링 테마**를 추천하여 지친 마음을 어루만져
+										줍니다.</p>
+
+									<p class="fw-bold fs-5 mt-4 p-3 rounded-3"
+										style="color: #ffffff; background-color: var(--highlight-color);">
+										"사용자님의 이야기에 귀 기울여<br class="d-md-none"> 지친 하루를 **따뜻하게
+										도닥여** 드릴게요."
+									</p>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="tab-pane fade" id="project-pane" role="tabpanel"
+							aria-labelledby="project-tab">
+							<div class="project-description-section position-relative pt-3">
+								<h3 class="fw-bold mb-4 text-center" style="color: #444;">[
+									프로젝트 DODAK 설명 ]</h3>
+
+								<img src="/img/생각하는도닥이.png" alt="생각하는 도닥이"
+									class="dodak-local-element"
+									style="position: absolute; top: -170px; left: 50px; width: 100px; opacity: 0.8; z-index: 10;">
+
+								<div class="row g-4">
+									<div class="col-md-4">
+										<div class="feature-box">
+											<i class="bi bi-pencil-square display-5 mb-2"
+												style="color: var(--mood-joy);"></i>
+											<h5 class="fw-bold">1. 감정 맞춤형 기록 환경</h5>
+											<p>작성자의 일기 감정을 분석하여 실시간으로 맞춤 힐링(음악,영상등..)컨텐츠를 제공하여, 일기
+												작성에 대한 몰입감을 높여줍니다.</p>
+										</div>
+									</div>
+
+									<div class="col-md-4">
+										<div class="feature-box">
+											<i class="bi bi-file-earmark-bar-graph display-5 mb-2"
+												style="color: var(--bs-info);"></i>
+											<h5 class="fw-bold">2. 상담을 미리 돕는 AI 기록 분석</h5>
+											<p>일기 내용을 AI가 꼼꼼히 읽고 중요한 감정 키워드를 미리 정리해 둡니다. 진단 리포트는 월별
+												보고서의 기반이 되어, 당신의 마음 상태를 한눈에 파악하고 더 깊이 있는 상담을 준비하는 데 큰 도움이
+												됩니다.</p>
+										</div>
+									</div>
+
+									<div class="col-md-4">
+										<div class="feature-box">
+											<i class="bi bi-bar-chart-line display-5 mb-2"
+												style="color: var(--mood-regret);"></i>
+											<h5 class="fw-bold">3. 월별 감정 보고서 제공</h5>
+											<p>정신과 전문의에게 환자의 월별 감정 변화와 통계를 시각화하여 제공함으로써, 환자의 상태를 빠르게
+												파악하고 상담을 진행할 수 있습니다</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+
+			<!-- ========== 대시보드 패널 ========== -->
+			<div class="tab-pane fade" id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab">
+				<div class="app-card">
+					<h2 class="text-center fw-bold mb-4" style="color: #6c757d;">
+						<i class="bi bi-speedometer2 me-2"></i> 의사 대시보드
+					</h2>
+
+					<!-- 요약 카드 섹션 -->
+					<div class="row g-4 mb-4">
+						<!-- 총 배정 환자 수 -->
+						<div class="col-md-3 col-sm-6">
+							<div class="dashboard-card bg-primary text-white">
+								<div class="d-flex justify-content-between align-items-center">
+									<div>
+										<h6 class="mb-1">배정된 환자</h6>
+										<h2 class="mb-0" id="dashTotalPatients">-</h2>
+									</div>
+									<i class="bi bi-people-fill" style="font-size: 2.5rem; opacity: 0.7;"></i>
+								</div>
+								<small>전체 담당 환자 수</small>
+							</div>
+						</div>
+
+						<!-- 중증 환자 수 -->
+						<div class="col-md-3 col-sm-6">
+							<div class="dashboard-card bg-danger text-white">
+								<div class="d-flex justify-content-between align-items-center">
+									<div>
+										<h6 class="mb-1">중증 환자</h6>
+										<h2 class="mb-0" id="dashSeverePatients">-</h2>
+									</div>
+									<i class="bi bi-exclamation-triangle-fill" style="font-size: 2.5rem; opacity: 0.7;"></i>
+								</div>
+								<small>집중 관리 필요</small>
+							</div>
+						</div>
+
+						<!-- 이번 달 일기 수 -->
+						<div class="col-md-3 col-sm-6">
+							<div class="dashboard-card bg-success text-white">
+								<div class="d-flex justify-content-between align-items-center">
+									<div>
+										<h6 class="mb-1">이번 달 일기</h6>
+										<h2 class="mb-0" id="dashMonthlyDiaries">-</h2>
+									</div>
+									<i class="bi bi-journal-text" style="font-size: 2.5rem; opacity: 0.7;"></i>
+								</div>
+								<small>환자들의 기록</small>
+							</div>
+						</div>
+
+						<!-- 평균 행복 지수 -->
+						<div class="col-md-3 col-sm-6">
+							<div class="dashboard-card bg-warning text-dark">
+								<div class="d-flex justify-content-between align-items-center">
+									<div>
+										<h6 class="mb-1">평균 행복지수</h6>
+										<h2 class="mb-0" id="dashAvgHappiness">-</h2>
+									</div>
+									<i class="bi bi-emoji-smile-fill" style="font-size: 2.5rem; opacity: 0.7;"></i>
+								</div>
+								<small>전체 환자 평균</small>
+							</div>
+						</div>
+					</div>
+
+					<!-- 차트 및 상세 정보 섹션 -->
+					<div class="row g-4 mb-4">
+						<!-- 감정 분포 차트 -->
+						<div class="col-md-6">
+							<div class="dashboard-section">
+								<h5 class="section-title"><i class="bi bi-pie-chart-fill me-2"></i>전체 환자 감정 분포</h5>
+								<div class="chart-container" style="height: 300px;">
+									<canvas id="dashEmotionPieChart"></canvas>
+								</div>
+							</div>
+						</div>
+
+						<!-- 주간 일기 작성 추이 -->
+						<div class="col-md-6">
+							<div class="dashboard-section">
+								<h5 class="section-title"><i class="bi bi-graph-up me-2"></i>최근 7일 일기 작성 추이</h5>
+								<div class="chart-container" style="height: 300px;">
+									<canvas id="dashWeeklyLineChart"></canvas>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- 환자 상태 테이블 및 알림 섹션 -->
+					<div class="row g-4">
+						<!-- 중증 환자 목록 -->
+						<div class="col-md-6">
+							<div class="dashboard-section">
+								<h5 class="section-title text-danger">
+									<i class="bi bi-exclamation-circle-fill me-2"></i>중증 환자 현황
+								</h5>
+								<div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+									<table class="table table-hover table-sm" id="dashSevereTable">
+										<thead class="table-light sticky-top">
+											<tr>
+												<th>환자명</th>
+												<th>우울지수</th>
+												<th>최근 일기</th>
+												<th>상태</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr><td colspan="4" class="text-center text-muted">로딩 중...</td></tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+
+						<!-- 최근 활동 로그 -->
+						<div class="col-md-6">
+							<div class="dashboard-section">
+								<h5 class="section-title">
+									<i class="bi bi-clock-history me-2"></i>최근 일기 작성 현황
+								</h5>
+								<div class="activity-log" id="dashRecentActivity" style="max-height: 300px; overflow-y: auto;">
+									<div class="text-center text-muted p-3">로딩 중...</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- 월별 감정 추이 (큰 차트) -->
+					<div class="row g-4 mt-2">
+						<div class="col-12">
+							<div class="dashboard-section">
+								<h5 class="section-title"><i class="bi bi-bar-chart-line-fill me-2"></i>월별 감정 추이 (전체 환자)</h5>
+								<div class="chart-container" style="height: 250px;">
+									<canvas id="dashMonthlyBarChart"></canvas>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane fade " id="stats-panel" role="tabpanel"
+				aria-labelledby="stats-tab">
+
+				<!-- 헤더 영역 수정 시작 -->
+				<div
+					class="stats-header-container d-flex justify-content-between align-items-center mb-4">
+
+
+				</div>
+				<!-- 헤더 영역 수정 끝 -->
+
+				<div class="row gx-4">
+					<div class="col-12 col-lg-4 d-flex">
+						<div class="app-card calendar-card flex-grow-1 position-relative">
+							<div
+								class="d-flex justify-content-between align-items-center mb-4">
+								<select class="form-select form-select-sm fw-bold me-auto"
+									style="width: 120px; color: #6c757d;" id="yearSelect">
+								</select>
+
+								<div class="d-flex align-items-center">
+									<h5 class="fw-bold m-0 me-3"
+										style="color: #333; font-size: 1.15rem;"
+										id="currentMonthDisplay">--월</h5>
+
+									<div class="btn-group" role="group"
+										aria-label="Month Navigation">
+										<button type="button"
+											class="btn btn-sm btn-outline-secondary month-prev-btn"
+											style="border-right: none;">
+											<i class="bi bi-chevron-left"></i>
+										</button>
+										<button type="button"
+											class="btn btn-sm btn-outline-secondary month-next-btn">
+											<i class="bi bi-chevron-right"></i>
+										</button>
+									</div>
+								</div>
+							</div>
+
+							<img src="/img/앉아서독서하는도닥이.png" alt="달력 도닥이"
+								class="dodak-local-element dodak-stats-calendar-2"
+								style="top: 620px; width: 200px; right: 23%;">
+
+							<div class="calendar-grid mb-4">
+								<div class="calendar-header">월</div>
+								<div class="calendar-header">화</div>
+								<div class="calendar-header">수</div>
+								<div class="calendar-header">목</div>
+								<div class="calendar-header">금</div>
+								<div class="calendar-header">토</div>
+								<div class="calendar-header">일</div>
+								<div></div>
+								<div></div>
+								<div></div>
+								<div></div>
+								<div></div>
+								<div></div>
+								<div class="calendar-day today"
+									style="background-color: var(--mood-anger); color: white;">1</div>
+								<div class="calendar-day date">2</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-anxiety);">3</div>
+								<div class="calendar-day date">4</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-anxiety);">5</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-regret);">6</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-regret);">7</div>
+								<div class="calendar-day date">8</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-joy);">9</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-joy);">10</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-joy);">11</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-regret);">12</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-regret);">13</div>
+								<div class="calendar-day date">14</div>
+								<div class="calendar-day date">15</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-joy);">16</div>
+								<div class="calendar-day"
+									style="background-color: var(--mood-joy);">17</div>
+								<div class="calendar-day date">18</div>
+								<div class="calendar-day date">19</div>
+								<div class="calendar-day date">20</div>
+								<div class="calendar-day date">21</div>
+								<div class="calendar-day date">22</div>
+								<div class="calendar-day date">23</div>
+								<div class="calendar-day date">24</div>
+								<div class="calendar-day date">25</div>
+								<div class="calendar-day date">26</div>
+								<div class="calendar-day date">27</div>
+								<div class="calendar-day date">28</div>
+								<div class="calendar-day date">29</div>
+								<div class="calendar-day date">30</div>
+								<div class="calendar-day date">31</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-lg-8">
+						<div class="app-card">
+							<div class="d-flex align-items-center mt-2 mb-3">
+								<img src="/img/dodak.png" alt="도닥이 아이콘"
+									style="width: 2em; height: 2em; margin-right: 10px;">
+								<div class="chat-bubble flex-grow-1">이번 달의 감정 패턴과 비율을
+									분석해봤어.</div>
+								<!-- 환자 선택 드롭다운 박스 추가 -->
+								<div class="patient-select-wrapper">
+									<select class="form-select form-select-sm fw-bold"
+										style="width: 200px; height: 50px;" id="patientSelect">
+										<option value="" disabled selected>환자 선택</option>
+									</select>
+								</div>
+							</div>
+							<div class="chart-grid">
+								<div class="p-3">
+									<h5 class="fw-bold mb-3" style="color: #444;">이 달의 마음 상태</h5>
+									<p
+										class="mb-1 fw-semibold d-flex justify-content-between align-items-center">
+										종합 우울지수 <span style="font-size: 0.9em; color: #d0021b;">보통
+											😊</span>
+									</p>
+									<div class="indicator-bar mb-3">
+										<div class="indicator-fill"
+											style="width: 0%; background-color: var(--mood-sad);"></div>
+										<div class="indicator-level">2단계</div>
+									</div>
+									<p
+										class="mb-1 fw-semibold d-flex justify-content-between align-items-center">
+										종합 행복지수 <span style="font-size: 0.9em; color: #69a74e;">보통
+											😊</span>
+									</p>
+									<div class="indicator-bar mb-3">
+										<div class="indicator-fill"
+											style="width: 0%; background-color: var(--mood-joy);"></div>
+										<div class="indicator-level">2단계</div>
+									</div>
+									<p class="text-center mt-4"
+										style="font-size: 0.9em; color: #888;">집중 분석 필요 🔍</p>
+								</div>
+								<div class="p-3">
+									<h6 class="text-center">가장 부정적이었던 날 🌧️</h6>
+									<div class="d-flex align-items-center mb-3">
+										<span style="font-size: 1.5em;">😥</span>
+										<div class="chat-bubble flex-grow-1 m-0">가장 우울했던 날 TOP 3
+											일기</div>
+									</div>
+									<div class="top-diary-list-container"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="atti-comment-section">
+					<ul class="nav nav-tabs nav-justified" id="chartTabs"
+						role="tablist">
+						<li class="nav-item" role="presentation">
+							<button class="nav-link active" id="pie-tab" data-bs-toggle="tab"
+								data-bs-target="#pie-chart-pane" type="button" role="tab"
+								aria-controls="pie-chart-pane" aria-selected="true">종합
+								마음 추이 차트</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="line-tab" data-bs-toggle="tab"
+								data-bs-target="#line-chart-pane" type="button" role="tab"
+								aria-controls="line-chart-pane" aria-selected="false">행복/우울
+								지수변화 차트</button>
+						</li>
+					</ul>
+
+					<div class="tab-content atti-chart-tab-content"
+						id="chartTabsContent">
+
+						<div class="tab-pane fade show active" id="pie-chart-pane"
+							role="tabpanel" aria-labelledby="pie-tab" tabindex="0"
+							align="center">
+							<canvas id="pie-chart" width="342px" height="342px"></canvas>
+						</div>
+
+						<div class="tab-pane fade" id="line-chart-pane" role="tabpanel"
+							aria-labelledby="line-tab" tabindex="0" align="center">
+							<canvas id="line-chart" width="342px" height="342px"></canvas>
+						</div>
+
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane fade" id="list-panel" role="tabpanel"
+				aria-labelledby="list-tab">
+				<div class="row">
+					<div class="col-12">
+						<div class="app-card position-relative">
+
+							<div
+								class="d-flex justify-content-between align-items-center mb-4">
+								<h4 class="fw-bold m-0" style="color: #555;">기록된 환자의 일기 모음
+									📚</h4>
+
+								<div class="col-4 col-md-3">
+									<div class="d-flex align-items-center gap-2">
+										<label for="memberSelect" class="form-label mb-0"
+											style="white-space: nowrap;"> <strong>환자 선택
+												:</strong>
+										</label> <select id="memberSelect" style="height: 50px;"
+											class="form-select form-select-sm fw-bold">
+											<option value="">-- 환자 선택 --</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<p class="text-muted mb-4" id="total-count-message"></p>
+
+							<img src="/img/휴식하는도닥이.png" alt="휴식하는 도닥이"
+								class="dodak-local-element dodak-list-search-1">
+
+							<div class="d-flex align-items-center mb-4 gap-2">
+								<div class="controls">
+									<div class="col">
+										<label for="yearSearch">연도 검색 / 선택</label>
+										<div class="search">
+											<input id="yearSearch" type="search"
+												placeholder="예: 1990 또는 20" aria-label="연도 검색" />
+										</div>
+										<div id="yearList" class="list" role="listbox"
+											aria-label="연도 목록" tabindex="0"></div>
+									</div>
+
+									<div class="col">
+										<label for="monthSearch">월 검색 / 선택</label> <input
+											id="monthSearch" type="search" placeholder="예: 3 또는 03"
+											aria-label="월 검색" />
+										<div id="monthList" class="list" role="listbox"
+											aria-label="월 목록" tabindex="0"></div>
+									</div>
+
+									<div class="col">
+										<label for="daySearch">일 검색 / 선택</label> <input id="daySearch"
+											type="search" placeholder="예: 15 또는 1" aria-label="일 검색" />
+										<div id="dayList" class="list" role="listbox" tabindex="0"
+											aria-label="일 목록"></div>
+									</div>
+								</div>
+
+								<div class="output" aria-live="polite">
+									<strong id="selected">없음</strong>
+								</div>
+								<div class="input-group ms-auto"
+									style="max-width: 290px; height: 60px; padding-top: 20px;">
+									<input type="text" class="form-control form-control-sm"
+										placeholder="제목/내용 검색">
+									<button class="btn btn-secondary btn-sm" type="button">
+										<i class="bi bi-search"></i>
+									</button>
+								</div>
+							</div>
+							<input type="hidden" id="waitChk" value="0">
+							<div class="diary-list"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane fade" id="mypage-panel">
+				<div class="container">
+
+					<ul class="nav nav-tabs sub-nav-tabs" id="myPageInnerTab"
+						role="tablist">
+						<li class="nav-item" role="presentation">
+							<button class="nav-link active" id="info-tab"
+								data-bs-toggle="tab" data-bs-target="#info-pane" type="button"
+								role="tab" aria-controls="info-pane" aria-selected="true">
+								기본정보 수정</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="assign-tab" data-bs-toggle="tab"
+								data-bs-target="#assign-pane" type="button" role="tab"
+								aria-controls="assign-pane" aria-selected="false">환자 배정
+							</button>
+						</li>
+					</ul>
+					<div class="tab-content pt-3" id="myPageInnerTabContent">
+
+						<div class="tab-pane fade show active" id="info-pane"
+							role="tabpanel" aria-labelledby="info-tab" tabindex="0">
+
+
+							<form id="registerForm">
+								<input type="hidden" id="memberId" name="memberId"
+									th:value="${session.memberId}"> <input type="hidden"
+									id="agreements" name="agreementYn" value=""> <input
+									type="hidden" id="oldImgPath" name="oldImgPath" value="">
+								<div class="header-section-wrapper"></div>
+
+								<div class="form-section">
+									<h3 class="section-title">
+										<i class="fas fa-user"></i> 기본 정보
+									</h3>
+									<div class="grid-2">
+										<div class="form-group">
+											<div class="profile-section">
+												<div class="profile-image-container"
+													id="profileImageContainer" align="center">
+													<img
+														src="https://placehold.co/120/DCC5AE/FFFFFF?text=PROFILE"
+														alt="프로필 이미지" style="width: 100%; height: 100%"
+														class="profile-image"> <input type="file"
+														id="profileImageUpload" name="profileImage"
+														accept="image/*" style="display: none;">
+													<div class="overlay">클릭하여 이미지 변경</div>
+												</div>
+											</div>
+										</div>
+										<div class="form-group">
+											<label for="roleSelect" class="required">가입 역할</label> <select
+												id="roleSelect" name="role" class="form-control"
+												disabled="disabled">
+												<option value="USER">일반 회원 (USER)</option>
+												<option value="DOCTOR">의사 회원 (DOCTOR)</option>
+											</select>
+										</div>
+										<div class="form-group">
+											<label for="inputId" class="required">아이디</label>
+											<div class="input-group">
+												<input type="text" readonly="readonly" id="inputId"
+													name="userId" class="form-control" placeholder="ID 입력"
+													maxlength="20" autocomplete="off">
+												<button type="button" class="btn btn-secondary"
+													id="buttonIDCheck" disabled="disabled" onclick="checkId()">중복
+													체크</button>
+											</div>
+											<span class="help-text">5~20자, 영문+숫자 조합.</span> <small
+												id="idMessage" class="form-text text-muted"></small>
+										</div>
+										<div class="form-group">
+											<label for="inputName" class="required">이름 (한글)</label> <input
+												type="text" id="inputName" name="name" class="form-control"
+												placeholder="실명 입력 (한글)" maxlength="10" required="required">
+										</div>
+
+										<div class="form-group">
+											<label for="password" class="required">비밀번호</label> <input
+												type="password" name="password" class="form-control"
+												maxlength="20" id="password" placeholder="비밀번호 입력" required>
+											<small class="help-text">8~20자, 영문+숫자+특수문자 조합.</small>
+										</div>
+										<div class="form-group">
+											<label for="passwordConfirm" class="required">비밀번호 확인</label>
+											<input type="password" name="passwordConfirm"
+												class="form-control" id="passwordConfirm"
+												placeholder="비밀번호 재입력" maxlength="20" required="required">
+											<small class="help-text" id="passwordMatchText"></small>
+										</div>
+									</div>
+								</div>
+
+								<div class="form-section">
+									<h3 class="section-title">
+										<i class="fas fa-mobile-alt"></i> 연락 정보
+									</h3>
+									<div class="grid-2">
+										<div class="form-group">
+											<label for="inputPhone" class="required">휴대 전화</label> <input
+												type="tel" class="form-control" id="inputPhone" name="phone"
+												placeholder="010-XXXX-XXXX" required="required">
+										</div>
+										<div class="form-group">
+											<label for="inputEmail" class="required">이메일</label>
+											<div class="input-group">
+												<input type="email" class="form-control" id="inputEmail"
+													name="email" placeholder="example@dodak.com"
+													required="required">
+												<input type="hidden" class="form-control" id="inputEmailCheck"
+													name="emailCheck">													
+												<button type="button" class="btn btn-secondary"
+													onclick="validateEmail()" id="buttonEmailCheck">중복
+													체크</button>
+											</div>
+											<small class="help-text">이메일 형식 검증 및 중복 불가.</small> <small
+												class="help-text" id="emailMessage"></small>
+
+										</div>
+									</div>
+								</div>
+
+								<div class="form-section">
+									<h3 class="section-title">
+										<i class="fas fa-home"></i> 주소 정보
+									</h3>
+									<div class="grid-2">
+										<div class="form-group">
+											<label for="zipCode" class="required">우편 번호</label>
+											<div class="input-group">
+												<input type="text" class="form-control" id="zipCode"
+													placeholder="우편번호" name="zipCode" readonly required>
+												<button type="button" class="btn btn-secondary"
+													id="buttonPostcodeSearch">검색</button>
+											</div>
+										</div>
+										<div class="form-group">
+											<label for="streetAdr" class="required">주소</label> <input
+												type="text" class="form-control" id="streetAdr" name="addr1"
+												placeholder="도로명 주소" readonly required>
+										</div>
+									</div>
+									<div class="form-group">
+										<label for="inputAddressDetail">상세 주소</label> <input type="text"
+											class="form-control" id="inputAddressDetail" name="addr2"
+											placeholder="상세 주소 (선택 입력)">
+									</div>
+								</div>
+
+								<div class="form-section" id="doctorInfoSection"
+									style="display: none;">
+									<h3 class="section-title">
+										<i class="fas fa-hospital-alt"></i> 의사 정보
+									</h3>
+									<div class="grid-2">
+										<div class="form-group">
+											<label for="hospNameDisplay" class="required">소속 병원</label>
+											<div class="input-group">
+												<input type="text" id="hospNameDisplay" class="form-control"
+													placeholder="병원 선택 버튼을 눌러주세요" readonly> <input
+													type="hidden" id="hospIdx" name="hospIdx">
+												<button type="button" class="btn btn-primary"
+													id="openHospitalModalBtn">병원 선택/추가</button>
+											</div>
+										</div>
+										<div class="form-group">
+											<label for="inputSpecialty" class="required">전문 분야</label> <input
+												type="text" id="inputSpecialty" name="specialty"
+												class="form-control" placeholder="예: 정신 건강의학과">
+										</div>
+									</div>
+								</div>
+
+
+
+
+								<div class="form-section agreement-section">
+									<h3 class="section-title">
+										<i class="fas fa-file-alt"></i> 마케팅 정보 수신 동의
+									</h3>
+									<div class="grid-2 agreement-checkboxes">
+
+										<div class="form-group">
+											<input type="checkbox" id="checkTerms3"> <span
+												class="checkbox-text">마케팅 정보 수신 동의 (이메일/SMS) (선택)</span>
+										</div>
+									</div>
+								</div>
+
+								<div class="footer-actions" style="width: 100%" align="center">
+									<button class="btn btn-submit-small" id="regBtn">회원 정보
+										수정</button>
+
+								</div>
+							</form>
+						</div>
+						<div class="tab-pane fade" id="assign-pane" role="tabpanel"
+							aria-labelledby="assign-tab" tabindex="0">
+							<div class="assignment-wrapper">
+
+								<div class="mb-4">
+									<h3 class="section-title">
+										<i class="fas fa-user-friends me-2" style="color: #A36B3C;"></i>
+										환자 배정 관리
+									</h3>
+								</div>
+
+								<div class="row mb-3">
+									<div class="col-md-5">
+										<div class="input-group">
+											<input type="text" class="form-control"
+												placeholder="환자 이름 검색..." id="searchInput">
+											<button class="btn btn-secondary" type="button"
+												id="searchButton">
+												<i class="fas fa-search"></i> 검색
+											</button>
+										</div>
+									</div>
+									<div class="col-md-7"></div>
+								</div>
+
+								<div class="row align-items-stretch mb-5">
+									<div class="col-md-5">
+										<div class="app-card p-3" style="padding-bottom: 10px;">
+											<h5 class="sub-section-title text-center"
+												style="margin-bottom: 15px;">배정될 환자 리스트</h5>
+											<div class="list-group" id="unassignedPatientList"
+												style="min-height: 300px; max-height: 450px; overflow-y: auto; border: 1px solid var(--border-color);">
+												<button type="button"
+													class="list-group-item list-group-item-action">환자
+													이름 1 (미배정)</button>
+												<button type="button"
+													class="list-group-item list-group-item-action">환자
+													이름 2 (미배정)</button>
+											</div>
+										</div>
+									</div>
+
+									<div
+										class="col-md-2 d-flex align-items-center justify-content-center">
+										<div class="d-flex flex-column gap-3">
+											<button class="btn btn-submit-small"
+												style="width: 50px; height: 50px;" title="선택 환자 배정">
+												<i class="fas fa-angle-double-right"></i>
+											</button>
+											<button class="btn btn-secondary"
+												style="width: 50px; height: 50px;" title="선택 환자 배정 해제">
+												<i class="fas fa-angle-double-left"></i>
+											</button>
+										</div>
+									</div>
+
+									<div class="col-md-5">
+										<div class="app-card p-3" style="padding-bottom: 10px;">
+											<h5 class="sub-section-title text-center"
+												style="margin-bottom: 15px;">배정된 환자 리스트 (선택 항목)</h5>
+											<div class="list-group" id="assignedPatientList"
+												style="min-height: 300px; max-height: 450px; overflow-y: auto; border: 1px solid var(--border-color);">
+												<button type="button"
+													class="list-group-item list-group-item-action active">환자
+													이름 A (배정됨)</button>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="assigned-patient-summary app-card p-4">
+									<h3 class="section-title">
+										<i class="fas fa-user-friends me-2" style="color: #A36B3C;"></i>현재
+										배정된 환자 목록
+									</h3>
+
+									<div class="table-responsive">
+										<table class="table table-hover align-middle patient-table">
+											<thead>
+												<tr class="table-header">
+													<th>No.</th>
+													<th>환자 아이디</th>
+													<th>환자 이름</th>
+													<th>연락처</th>
+													<th>증상</th>
+												</tr>
+											</thead>
+											<tbody id="assignTargetBody">
+												<tr>
+													<td>1</td>
+													<td>user_001</td>
+													<td>김철수</td>
+													<td>2025-11-12</td>
+													<td><span class="badge bg-success">정상</span></td>
+												</tr>
+												<tr>
+													<td>2</td>
+													<td>user_002</td>
+													<td>이영희</td>
+													<td>2025-11-09</td>
+													<td><span class="badge bg-warning text-dark">기록
+															지연</span></td>
+												</tr>
+												<tr>
+													<td colspan="5" class="text-center text-muted p-3"
+														id="noAssignedPatients" style="display: none;"><i
+														class="fas fa-info-circle me-2"></i> 현재 배정된 환자가 없습니다.</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+
+								<div class="footer-actions" style="width: 100%" align="center">
+									<button class="btn btn-submit-small" id="saveAssignmentButton">
+										<i class="fas fa-check-circle"></i> 최종 배정 정보 저장
+									</button>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<div id="hospitalModal" class="modal">
+		<div class="modal-content">
+			<span class="close-button">&times;</span>
+			<h3 class="modal-title">
+				<i class="fas fa-hospital"></i> 병원 검색 및 추가
+			</h3>
+
+			<div class="search-hospital-section">
+				<h4 class="sub-section-title">병원 검색</h4>
+				<div class="form-group">
+					<label for="hospitalSearchInput" class="required">병원 이름으로
+						검색</label>
+					<div class="input-group">
+						<input type="text" id="hospitalSearchInput" class="form-control"
+							placeholder="의료원">
+						<button type="button" class="btn btn-secondary"
+							id="searchHospitalBtn">검색</button>
+					</div>
+				</div>
+				<div id="hospitalSearchResults" class="search-results"></div>
+			</div>
+
+			<div class="add-hospital-section">
+				<h4 class="sub-section-title">병원 등록/수정</h4>
+				<p>찾는 병원이 없으신가요? 직접 등록해보세요.</p>
+				<button type="button" class="btn btn-primary"
+					id="openAddHospitalFormBtn">병원 정보 입력</button>
+
+				<div id="newHospitalForm" class="new-hospital-form"
+					style="display: none;">
+					<h5>병원 정보 입력</h5>
+					<div class="grid-2">
+						<div class="form-group">
+							<label for="newHospitalName" class="required">병원명</label> <input
+								type="text" id="newHospitalName" name="newHospitalName"
+								class="form-control" placeholder="병원 이름"> <input
+								type="hidden" id="newHospitalId" name="newHospitalId"
+								class="form-control">
+						</div>
+						<div class="form-group">
+							<label for="newHospitalTel" class="required">대표 전화번호</label> <input
+								type="text" id="newHospitalTel" name="newHospitalTel"
+								class="form-control" placeholder="02-XXXX-XXXX 또는 010-XXXX-XXXX"
+								required>
+						</div>
+						<div class="form-group">
+							<label for="newHospitalZipCode" class="required">우편 번호</label>
+							<div class="input-group">
+								<input type="text" id="newHospitalZipCode"
+									name="newHospitalZipCode" class="form-control"
+									placeholder="우편번호" readonly>
+								<button type="button" class="btn btn-secondary"
+									id="searchNewHospitalZipCodeBtn">검색</button>
+							</div>
+						</div>
+						<div class="form-group full-width">
+							<label for="newHospitalAddr1" class="required">주소</label> <input
+								type="text" id="newHospitalAddr1" name="newHospitalAddr1"
+								class="form-control" placeholder="기본 주소" readonly>
+						</div>
+						<div class="form-group full-width">
+							<label for="newHospitalAddr2">상세 주소</label> <input type="text"
+								id="newHospitalAddr2" name="newHospitalAddr2"
+								class="form-control" placeholder="상세 주소 입력">
+						</div>
+					</div>
+
+					<div class="new-hospital-form-actions">
+						<button type="button" class="btn btn-primary"
+							id="saveNewHospitalBtn">저장</button>
+						<button type="button" class="btn btn-secondary"
+							id="cancelAddHospitalBtn">취소</button>
+					</div>
+				</div>
+			</div>
+
+			<button type="button" class="btn btn-secondary"
+				id="closeHospitalModalBtn">팝업 닫기</button>
+		</div>
+	</div>
+	<div class="modal" id="diaryDetailModal">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="diaryDetailModalLabel"></h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"
+						aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted mb-3" id="modal-date-info"></p>
+
+					<div id="modal-diary-content"
+						style="max-height: 400px; overflow-y: auto; padding: 10px; border: 1px solid #eee; border-radius: 5px;">
+					</div>
+
+					<h6 class="mt-4 border-bottom pb-1">AI 분석 결과</h6>
+					<div id="modal-analysis-result"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary"
+						data-bs-dismiss="modal">닫기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="/js/scriptNew.js"></script>
+	<script src="/js/calendar.js"></script>
+
+	<script>
+		// 여기에 JavaScript 코드 추가
+		const customNavbar = document.querySelector('.custom-navbar');
+		let menucon = document.getElementById("menucon");
+
+		if (customNavbar) {
+		    // 페이지 로드 시에는 숨김 상태 (CSS가 처리)
+
+		    // mouseover (마우스를 올렸을 때) 이벤트 리스너
+		    customNavbar.addEventListener('mouseover', function() {
+		        // show-navbar 클래스를 추가하여 네비게이션을 보이게 합니다.        
+		        menucon.style.display= "block";
+		    });
+
+		    // mouseout (마우스를 떼었을 때) 이벤트 리스너
+		    customNavbar.addEventListener('mouseout', function() {
+		        // show-navbar 클래스를 제거하여 네비게이션을 숨깁니다.        
+		    	menucon.style.display= "none";
+		    });
+		}
+		
+			
+	</script>
+	<script>
+    // ⚠️ [필수 설정] 로그인한 사용자 ID (PK)를 서버 템플릿 엔진을 통해 받아와야 합니다.
+    // 예: Thymeleaf/JSP를 사용하여 <input type="hidden" id="loggedInMemberId" value="123"> 와 같이 추가해야 합니다.
+    // 여기서는 ID를 가진 hidden input이 있다고 가정하고 값을 가져오거나, 임시로 1을 사용합니다.
+    const MEMBER_ID = document.getElementById('memberId') ?
+                      document.getElementById('memberId').value :
+                      '1'; // 테스트를 위해 임시로 '1' 사용
+
+    const DIARY_PAGE_SIZE = 4; // 한 페이지당 일기 개수 (Controller 설정과 일치해야 함)
+
+    // 통계 달력 전역 변수 (차트 탭 전환 시 상태 유지) - window 객체에 저장하여 디버깅 용이하게
+    window.statsCurrentYear = new Date().getFullYear();
+    window.statsCurrentMonth = new Date().getMonth() + 1; // 1-12
+    window.statsCalendarInitialized = false;
+
+
+    // DOM 요소 캐시
+    const $listPanel = document.getElementById('list-panel');
+    const $diaryListContainer = $listPanel.querySelector('.diary-list');
+    
+    // 기존 더미 목록 및 페이징 영역을 비웁니다.
+    $diaryListContainer.innerHTML = '';
+    $diaryListContainer.insertAdjacentHTML('afterend', '<nav aria-label="Diary Pagination" class="mt-4"><ul class="pagination justify-content-center"></ul></nav>');
+    
+    const $paginationNav = $listPanel.querySelector('nav[aria-label="Diary Pagination"] ul');
+    
+    // 검색 입력 필드와 버튼에 ID가 없으므로 쿼리 선택자를 사용하고 ID를 할당합니다.
+    const $keywordSearch = $listPanel.querySelector('.input-group input[type="text"]');
+    const $searchButton = $listPanel.querySelector('.input-group button');
+    $keywordSearch.id = 'keywordSearch'; 
+    $searchButton.id = 'searchButton'; 
+
+    const $yearSearch = document.getElementById('yearSearch');
+    const $monthSearch = document.getElementById('monthSearch');
+    const $daySearch = document.getElementById('daySearch');
+    const $totalDiaryCount = $listPanel.querySelector('p.text-muted');
+    
+ 	// 스크립트 상단에 모달 인스턴스 및 DOM 요소 정의 (Bootstrap 5 가정)
+    const diaryDetailModal = new bootstrap.Modal(document.getElementById('diaryDetailModal'));
+    const $modalTitle = document.getElementById('diaryDetailModalLabel');
+    const $modalDateInfo = document.getElementById('modal-date-info');
+    const $modalContent = document.getElementById('modal-diary-content');
+    const $modalAnalysisResult = document.getElementById('modal-analysis-result');
+    
+    const $memberSelect = document.getElementById('memberSelect'); // ⭐️ 새 Select Box 캐시
+    const $patientSelect = document.getElementById('patientSelect'); // ⭐️ 새 Select Box 캐시
+    
+    /**
+     * 일기 항목에 클릭 이벤트를 바인딩하고 모달을 띄웁니다.
+     * @param {Array<Object>} diaries - 현재 페이지에 표시된 일기 데이터 목록
+     */
+    function bindDiaryClickEvents(diaries) {
+    	// 1. 혹시 남아있는 백드롭을 위해 강제로 body 클래스를 정리 (안전 조치)
+		document.body.classList.remove('modal-open');
+   	    document.body.style.overflow = 'auto';
+        const cards = document.querySelectorAll('.diary-item-card');
+        cards.forEach(card => {
+            card.addEventListener('click', function() {
+                const diaryIdx = this.dataset.idx;
+                const diaryData = diaries.find(d => String(d.diaryIdx) === diaryIdx); // 현재 클릭된 일기 데이터 찾기
+                
+                if (diaryData) {
+                    fillModalWithData(diaryData);
+                    diaryDetailModal.show(); // 모달 표시
+                }
+            });
+        });
+    }
+
+    // --- 1. 데이터 로드 함수 ---
+
+    /**
+     * 일기 목록을 서버에서 AJAX로 가져와 화면에 그립니다.
+     * @param {number} page - 요청할 페이지 번호 (0부터 시작)
+     */
+    async function loadDiaries(page = 0) {
+        if (!MEMBER_ID) return;
+     // ⭐️ 선택된 Member ID 가져오기
+        const selectedMemberId = $memberSelect.value ? parseInt($memberSelect.value) : null;
+        $diaryListContainer.innerHTML = '<p class="text-center text-info py-5">일기 목록을 불러오는 중...</p>';
+
+        const keyword = $keywordSearch.value.trim();
+        const year = $yearSearch.value.trim();
+        const month = $monthSearch.value.trim();
+        const day = $daySearch.value.trim();
+
+        // 쿼리 파라미터 구성
+        const params = new URLSearchParams({
+            page: page,
+            size: DIARY_PAGE_SIZE            
+        });
+        
+        
+        const bodyData = {
+                year: year,
+                month: month,
+                day: day,
+                keyword: keyword,
+             	// ⭐️ 요청 본문에 추가
+                selectedMemberId: selectedMemberId
+            };
+
+        const url = `/api/diaries/list/${MEMBER_ID}?${params.toString()}`;
+
+        try {
+        	const response = await fetch(url, {
+                method: 'POST', // ⭐️ POST 메서드 사용
+                headers: {
+                    'Content-Type': 'application/json' // ⭐️ JSON 형식 지정
+                },
+                body: JSON.stringify(bodyData) // ⭐️ 검색 조건을 JSON 문자열로 변환하여 본문에 포함
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+            const pageData = await response.json();
+            
+            // UI 업데이트
+            renderDiaryList(pageData.content);
+            renderPagination(pageData.page);
+            
+            $totalDiaryCount.textContent = `총 ${pageData.page.totalElements}개의 일기가 기록되어 있습니다.`;
+         // ⭐️⭐️⭐️ 새로 추가된 부분: 이벤트 리스너 바인딩 ⭐️⭐️⭐️
+            bindDiaryClickEvents(pageData.content);
+        } catch (error) {
+            console.error("일기 목록 로드 실패:", error);
+            $diaryListContainer.innerHTML = `<p class="text-danger text-center py-5">일기 목록을 불러오는 데 실패했습니다.</p>`;
+            $paginationNav.innerHTML = '';
+        }
+    }
+
+    // --- 2. 목록 렌더링 함수 ---
+
+    /**
+     * 일기 목록 데이터를 HTML로 변환하여 출력합니다.
+     */
+    function renderDiaryList(diaries) {
+        if (diaries.length === 0) {
+            $diaryListContainer.innerHTML = '<p class="text-center text-muted mt-5">검색 조건에 맞는 일기가 없습니다.</p>';
+            return;
+        }
+
+        const html = diaries.map(diary => {
+            // ⭐ 서버 엔티티의 필드명과 일치시켜야 합니다.
+            // aiResultMood 필드가 없으면 기본 '기록' 사용 (실제 구현 시 분석 결과 필드 사용)
+             
+            
+            // 날짜 포맷팅 (2025.10.20 형식으로 맞춤)            
+            const diaryDate = new Date(diary.createdAt).toLocaleDateString('ko-KR', {
+                year: 'numeric', month: '2-digit', day: '2-digit', weekday: "long" , hour: "2-digit" , minute: "2-digit" 
+            }).replace(/\. /g, '.').replace(/\.$/, '');
+            // Note: 날씨 정보는 Diary 엔티티에 weather 필드가 있다면 사용 가능합니다.
+            
+            const moods = [];
+            moods.push(diary.anxietyRatio);
+            moods.push(diary.sadnessRatio)
+            moods.push(diary.joyRatio)
+            moods.push(diary.angerRatio)
+            moods.push(diary.regretRatio);
+            moods.push(diary.hopeRatio);            
+            moods.push(diary.tirednessRatio);
+            moods.push(diary.depressionRatio);
+            moods.push(diary.neutralityRatio);
+            
+            const maxValue = Math.max(...moods); // 전개 구문(...)을 사용하여 배열 요소를 인수로 전달
+            //const mood = diary.aiResultMood || '기록';
+            //console.log("moods = " +JSON.stringify(moods));
+            let mood = '기록';
+         	// 2. 해당 최대값의 첫 번째 위치(인덱스) 찾기
+         	const maxIndex = moods.indexOf(maxValue); 
+         	if(maxIndex==0) {
+         		mood = "불안";
+         	} else if(maxIndex==1) {
+         		mood = "슬픔";
+         	} else if(maxIndex==2) {
+         		mood = "기쁨";
+         	} else if(maxIndex==3) {
+         		mood = "분노";
+         	} else if(maxIndex==4) {
+         		mood = "후회";
+         	} else if(maxIndex==5) {
+         		mood = "희망";
+         	} else if(maxIndex==6) {
+         		mood = "피로";
+         	} else if(maxIndex==7) {
+         		mood = "우울";
+         	} else if(maxIndex==8) {         	
+         		mood = "중립";
+         	} else {
+         		mood = "기록";
+         	}
+         	const moodEmoji = getMoodEmoji(mood);         	
+            return `
+                <div class="diary-item-card mood-${mood}" data-idx="${diary.diaryIdx}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="fw-bold mb-1">${diary.diaryTitle}</h5>
+                        <span class="diary-mood-tag mood-${mood}">${mood} ${moodEmoji}</span>
+                    </div>
+                    <p class="text-muted mb-2" style="font-size: 0.9em;">${diaryDate}</p>
+                    <p class="mb-0 text-truncate">${diary.diaryContent}</p>
+                </div>
+            `;
+        }).join('');
+
+        $diaryListContainer.innerHTML = html;
+    }
+
+    // --- 3. 페이징 렌더링 함수 ---
+
+    /**
+     * API에서 받은 페이징 정보를 기반으로 Pagination UI를 생성합니다.
+     */
+    function renderPagination(pageData) {
+    	const { number, totalPages } = pageData; // first와 last는 undefined일 수 있음.
+
+        // ⭐️ first와 last를 number와 totalPages를 기반으로 계산하여 대체합니다.
+        const first = (number === 0);
+        const last = (number === totalPages - 1);        
+        $paginationNav.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        // 페이지 블록 설정 (5개)
+        const displayPageCount = 5;
+        let startPage = Math.max(0, number - Math.floor(displayPageCount / 2));
+        let endPage = Math.min(totalPages - 1, startPage + displayPageCount - 1);
+        
+        if (endPage - startPage < displayPageCount - 1) {
+            startPage = Math.max(0, endPage - displayPageCount + 1);
+        }
+
+        // '이전' 버튼
+        const prevClass = first ? 'page-item disabled' : 'page-item';
+        $paginationNav.innerHTML += `<li class="${prevClass}"><a class="page-link" href="#" data-page="${number - 1}">이전</a></li>`;
+
+        // 페이지 번호
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = (i === number) ? 'page-item active' : 'page-item';
+            $paginationNav.innerHTML += `
+                <li class="${activeClass}">
+                    <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+                </li>
+            `;
+        }
+
+        // '다음' 버튼
+        const nextClass = last ? 'page-item disabled' : 'page-item';
+        $paginationNav.innerHTML += `<li class="${nextClass}"><a class="page-link" href="#" data-page="${number + 1}">다음</a></li>`;
+    }
+
+    
+    function getMoodEmoji(mood) {
+        switch (mood) {
+            case '기쁨': return '😊';
+            case '불안': return '😟';
+            case '분노': return '😡';
+            case '슬픔': return '😥';
+            case '후회': return '😔';
+            case '희망': return '✨';
+            case '중립': return '😐';
+            case '피로': return '😴';
+            case '우울': return '💙';
+            
+            default: return '🗒️';
+        }
+    }
+    
+    // --- 4. 이벤트 리스너 ---
+
+    // 1. 페이징 버튼 클릭 시
+    $listPanel.addEventListener('click', (e) => {
+        const target = e.target.closest('.page-link');
+        if (target) {
+            e.preventDefault();
+            const page = target.dataset.page;
+            if (page !== undefined && !target.closest('.page-item').classList.contains('disabled')) {
+                loadDiaries(parseInt(page));
+            }
+        }
+    });
+
+    // 2. 검색 및 날짜 필터 변경/클릭 시 첫 페이지(0) 로드
+    const searchInputs = [$yearSearch, $monthSearch, $daySearch, $keywordSearch];
+    
+    // 날짜/키워드 입력 필드 변경 시
+    searchInputs.forEach(input => {
+        if (input) {
+            input.addEventListener('change', () => loadDiaries(0));
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    loadDiaries(0);
+                }
+            });
+        }
+    });
+
+    // 검색 버튼 클릭 시
+    if ($searchButton) {
+        $searchButton.addEventListener('click', () => loadDiaries(0));
+    }
+
+
+    // --- 5. 초기 로드 ---
+    document.addEventListener('DOMContentLoaded', () => {
+        if (MEMBER_ID) {
+            // DOMContentLoaded 시점이 아닌, 탭이 활성화되는 시점에 호출하는 것이 더 효율적일 수 있습니다.
+            // 여기서는 DOM 로드 후 바로 호출합니다.
+            
+           	$('#stats-tab').on('shown.bs.tab', function (e) { 
+            	loadMembersForSelect($patientSelect, MEMBER_ID).then(() => {}); 
+           	});
+           
+            $('#list-tab').on('shown.bs.tab', function (e) {
+        		loadMembersForSelect($memberSelect, MEMBER_ID).then(() => { // ⭐️ 멤버 목록을 먼저 로드
+                	loadDiaries(0); // 멤버 목록 로드 완료 후 일기 로드 시작
+            	}); 
+            });
+        } else {
+            $diaryListContainer.innerHTML = '<p class="text-danger text-center">로그인한 사용자 정보를 찾을 수 없습니다.</p>';
+        }
+        
+        const assignTabElement = document.getElementById('assign-pane');
+        
+        // 탭이 처음 활성화될 때 (show.bs.tab) 목록 로드
+        $('#assign-tab').on('shown.bs.tab', function (e) {
+            
+         	// 1. 미배정 환자 리스트 로드
+            loadUnassignedPatients(MEMBER_ID);
+            
+            // 2. 배정된 환자 테이블 로드
+            loadAssignedPatientsTable(MEMBER_ID);
+        });
+    });
+    
+ 	// ⭐️ $memberSelect에 change 이벤트 추가
+    $memberSelect.addEventListener('change', () => loadDiaries(0));
+
+    // ⭐️ $patientSelect에 change 이벤트 추가 (통계 탭 환자 선택)
+    $patientSelect.addEventListener('change', () => {
+        const selectedPatientId = $patientSelect.value;
+        if (selectedPatientId) {
+            loadPatientStats(selectedPatientId);
+        }
+    });
+    
+    function fillModalWithData(diary) {    	
+        // 1. 날짜 포맷팅 (길게 상세 정보 표시)
+        const dateString = diary.createdAt.replace(/\+00:00$/, 'Z');
+        const dateObject = new Date(dateString); 
+        
+        const detailedDate = dateObject.toLocaleString('ko-KR', {
+            year: 'numeric', month: '2-digit', day: '2-digit', 
+            weekday: "long", hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+        
+        // 2. 모달 DOM 요소에 데이터 채우기
+        $modalTitle.textContent = diary.diaryTitle;
+        $modalDateInfo.innerHTML = `
+            <span class="badge bg-primary me-2">작성자: ${diary.memberName || '미확인'}</span>
+            <span class="badge bg-secondary">${detailedDate}</span>
+        `;
+        $modalContent.textContent = diary.diaryContent; // 내용을 텍스트로 삽입
+        
+        // 3. AI 분석 결과 채우기
+        let analysisHtml = '<p class="text-muted">분석 결과가 없습니다.</p>';
+        if (diary.modelName) { // modelName 필드가 있으면 분석 결과가 있다고 가정
+            analysisHtml = `
+                <p><strong>모델:</strong> ${diary.modelName}</p>                
+                <h6>감정 비율 (%)</h6>
+                <ul class="list-unstyled d-flex flex-wrap">
+                    <li class="me-3">불안: <strong>${diary.anxietyRatio || 0}%</strong></li>
+                    <li class="me-3">슬픔: <strong>${diary.sadnessRatio || 0}%</strong></li>
+                    <li class="me-3">기쁨: <strong>${diary.joyRatio || 0}%</strong></li>
+                    <li class="me-3">분노: <strong>${diary.angerRatio || 0}%</strong></li>
+                    <li class="me-3">후회: <strong>${diary.regretRatio || 0}%</strong></li>
+                    <li class="me-3">희망: <strong>${diary.hopeRatio || 0}%</strong></li>
+                    <li class="me-3">중립: <strong>${diary.neutralityRatio || 0}%</strong></li>
+                    <li class="me-3">피곤: <strong>${diary.tirednessRatio || 0}%</strong></li>
+                    <li class="me-3">우울: <strong>${diary.depressionRatio || 0}%</strong></li>
+                </ul>
+            `;
+        }
+        $modalAnalysisResult.innerHTML = analysisHtml;
+    }
+    
+    
+    /**
+     * 선택된 환자의 통계 정보를 로드합니다.
+     * @param {number} patientId 환자의 Member ID
+     */
+    function loadPatientStats(patientId) {
+        if (!patientId) return;
+
+        // 전역 변수에서 현재 선택된 연도/월 사용
+        const year = window.statsCurrentYear || new Date().getFullYear();
+        const month = window.statsCurrentMonth || (new Date().getMonth() + 1);
+
+        $.ajax({
+            url: `/api/analyses/stats/${patientId}`,
+            method: 'GET',
+            data: { year: year, month: month },
+            dataType: 'json',
+            success: function(stats) {
+                updatePieChart(stats.emotionAverages);
+                updateLineChart(stats.dailyEmotions);
+                updateIndicators(stats.indicators);
+                updateNegativeDays(stats.topNegativeDays);
+                updateDiaryCount(stats.diaryCount, stats.memberName);
+            },
+            error: function(xhr, status, error) {
+                alert('통계 데이터를 불러오는 데 실패했습니다.');
+            }
+        });
+    }
+
+    // 파이 차트 업데이트
+    let pieChartInstance = null;
+    function updatePieChart(emotions) {
+        const ctx = document.getElementById('pie-chart');
+        if (!ctx) return;
+
+        const data = {
+            labels: ['불안', '슬픔', '기쁨', '분노', '후회', '희망', '중립', '피로', '우울'],
+            datasets: [{
+                data: [
+                    emotions.anxiety || 0,
+                    emotions.sadness || 0,
+                    emotions.joy || 0,
+                    emotions.anger || 0,
+                    emotions.regret || 0,
+                    emotions.hope || 0,
+                    emotions.neutrality || 0,
+                    emotions.tiredness || 0,
+                    emotions.depression || 0
+                ],
+                backgroundColor: [
+                    '#FFA500', // 불안 - 주황
+                    '#4169E1', // 슬픔 - 파랑
+                    '#FFD700', // 기쁨 - 노랑
+                    '#DC143C', // 분노 - 빨강
+                    '#9370DB', // 후회 - 보라
+                    '#32CD32', // 희망 - 연두
+                    '#808080', // 중립 - 회색
+                    '#A0522D', // 피로 - 갈색
+                    '#483D8B'  // 우울 - 남색
+                ]
+            }]
+        };
+
+        if (pieChartInstance) {
+            pieChartInstance.destroy();
+        }
+
+        pieChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                legend: { position: 'right' }
+            }
+        });
+    }
+
+    // 라인 차트 업데이트
+    let lineChartInstance = null;
+    function updateLineChart(dailyEmotions) {
+        const ctx = document.getElementById('line-chart');
+        if (!ctx) return;
+
+        const labels = dailyEmotions.map(d => d.day + '일');
+        const happinessData = dailyEmotions.map(d => d.happiness || 0);
+        const sadnessData = dailyEmotions.map(d => d.sadnessIndex || 0);
+
+        const data = {
+            labels: labels,
+            datasets: [
+                {
+                    label: '행복 지수',
+                    data: happinessData,
+                    borderColor: '#FFD700',
+                    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+                    fill: true
+                },
+                {
+                    label: '우울 지수',
+                    data: sadnessData,
+                    borderColor: '#4169E1',
+                    backgroundColor: 'rgba(65, 105, 225, 0.2)',
+                    fill: true
+                }
+            ]
+        };
+
+        if (lineChartInstance) {
+            lineChartInstance.destroy();
+        }
+
+        lineChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                scales: {
+                    yAxes: [{ ticks: { beginAtZero: true, max: 100 } }]
+                }
+            }
+        });
+    }
+
+    // 종합 지표 업데이트
+    function updateIndicators(indicators) {
+        // 우울지수 표시
+        const depressionFill = document.querySelector('.indicator-fill[style*="mood-sad"]') ||
+                               document.querySelectorAll('.indicator-fill')[0];
+        const depressionLevel = document.querySelectorAll('.indicator-level')[0];
+        if (depressionFill) {
+            depressionFill.style.width = indicators.depressionIndex + '%';
+        }
+        if (depressionLevel) {
+            depressionLevel.textContent = indicators.depressionLevel + '단계';
+        }
+
+        // 행복지수 표시
+        const happinessFill = document.querySelector('.indicator-fill[style*="mood-joy"]') ||
+                              document.querySelectorAll('.indicator-fill')[1];
+        const happinessLevel = document.querySelectorAll('.indicator-level')[1];
+        if (happinessFill) {
+            happinessFill.style.width = indicators.happinessIndex + '%';
+        }
+        if (happinessLevel) {
+            happinessLevel.textContent = indicators.happinessLevel + '단계';
+        }
+
+        // 상태 텍스트 업데이트
+        const statusTexts = document.querySelectorAll('.d-flex.justify-content-between span');
+        if (statusTexts.length >= 4) {
+            if (statusTexts[1]) statusTexts[1].textContent = indicators.depressionStatus;
+            if (statusTexts[3]) statusTexts[3].textContent = indicators.happinessStatus;
+        }
+
+        // 추천 메시지
+        const recommendationEl = document.querySelector('.text-center.mt-4');
+        if (recommendationEl) {
+            recommendationEl.textContent = indicators.recommendation;
+        }
+    }
+
+    // 부정적인 날 TOP 3 업데이트
+    function updateNegativeDays(negativeDays) {
+        const container = document.querySelector('.top-diary-list-container');
+        if (!container) return;
+
+        if (!negativeDays || negativeDays.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">데이터가 없습니다.</p>';
+            return;
+        }
+
+        let html = '<ul class="list-unstyled">';
+        negativeDays.forEach((day, index) => {
+            const emoji = day.dominantNegativeEmotion === '우울' ? '😢' :
+                          day.dominantNegativeEmotion === '불안' ? '😟' :
+                          day.dominantNegativeEmotion === '분노' ? '😠' : '😥';
+            html += `
+                <li class="mb-2 p-2 bg-light rounded">
+                    <strong>${index + 1}. ${day.date}</strong> - ${day.title}<br>
+                    <small class="text-muted">${emoji} ${day.dominantNegativeEmotion} ${day.dominantNegativeRatio}%</small>
+                </li>
+            `;
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+    }
+
+    // 일기 수 표시 업데이트
+    function updateDiaryCount(count, memberName) {
+        // 필요 시 UI에 일기 수 표시 (현재 미사용)
+    }
+
+    /**
+     * 사용자 목록을 로드하여 <select> 박스를 채웁니다.
+     */
+    async function loadMembersForSelect(memberSelect, memberId) {
+        try {
+            const response = await fetch(`/api/members/users/assigned/${memberId}`, { method: 'GET' });
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+            const members = await response.json();
+            
+            // Select Box 초기화 (기존 '전체 사용자' 옵션 유지)
+            memberSelect.innerHTML = '<option value="">-- 환자 선택 --</option>'; 
+            
+            members.forEach(member => {            	
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = member.name + " (" + member.phone + ")";
+                
+                // ⭐️ 초기 로드 시, 로그인한 사용자를 기본 선택합니다.
+                if (member.id === parseInt(MEMBER_ID)) {
+                    option.selected = true;
+                }
+                memberSelect.appendChild(option);
+            });
+            
+        } catch (error) {
+            console.error("사용자 목록 로드 실패:", error);
+        }
+    }
+
+    // ========== 통계 달력 초기화 및 관리 ==========
+    // (전역 변수 window.statsCurrentYear, window.statsCurrentMonth, window.statsCalendarInitialized는 상단에 선언됨)
+
+    // 통계 달력 초기화
+    function initStatsCalendar() {
+        const yearSelect = document.getElementById('yearSelect');
+        const monthDisplay = document.getElementById('currentMonthDisplay');
+        const prevBtn = document.querySelector('.month-prev-btn');
+        const nextBtn = document.querySelector('.month-next-btn');
+
+        if (!yearSelect || !monthDisplay) return;
+
+        // 연도 옵션 생성 (현재 연도 ~ 5년 전)
+        yearSelect.innerHTML = '';
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear; y >= currentYear - 5; y--) {
+            const option = document.createElement('option');
+            option.value = y;
+            option.textContent = y + '년';
+            if (y === window.statsCurrentYear) option.selected = true;
+            yearSelect.appendChild(option);
+        }
+
+        // 월 표시 업데이트
+        monthDisplay.textContent = window.statsCurrentMonth + '월';
+
+        // 연도 변경 이벤트
+        yearSelect.addEventListener('change', function() {
+            window.statsCurrentYear = parseInt(this.value);
+            reloadStatsWithCurrentDate();
+        });
+
+        // 이전 월 버튼
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.statsCurrentMonth--;
+                if (window.statsCurrentMonth < 1) {
+                    window.statsCurrentMonth = 12;
+                    window.statsCurrentYear--;
+                }
+                syncCalendarUI();
+                reloadStatsWithCurrentDate();
+            });
+        }
+
+        // 다음 월 버튼
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.statsCurrentMonth++;
+                if (window.statsCurrentMonth > 12) {
+                    window.statsCurrentMonth = 1;
+                    window.statsCurrentYear++;
+                }
+                syncCalendarUI();
+                reloadStatsWithCurrentDate();
+            });
+        }
+    }
+
+    // 현재 선택된 날짜로 통계 다시 로드
+    function reloadStatsWithCurrentDate() {
+        const selectedPatientId = $patientSelect.value;
+        if (selectedPatientId) {
+            loadPatientStatsWithDate(selectedPatientId, window.statsCurrentYear, window.statsCurrentMonth);
+        }
+    }
+
+    // 날짜 지정 통계 로드
+    function loadPatientStatsWithDate(patientId, year, month) {
+        if (!patientId) return;
+
+        $.ajax({
+            url: `/api/analyses/stats/${patientId}`,
+            method: 'GET',
+            data: { year: year, month: month },
+            dataType: 'json',
+            success: function(stats) {
+                updatePieChart(stats.emotionAverages);
+                updateLineChart(stats.dailyEmotions);
+                updateIndicators(stats.indicators);
+                updateNegativeDays(stats.topNegativeDays);
+                updateDiaryCount(stats.diaryCount, stats.memberName);
+            },
+            error: function(xhr, status, error) {
+                console.error('통계 로드 실패:', error);
+            }
+        });
+    }
+
+    // 달력 UI를 현재 변수 값으로 동기화
+    function syncCalendarUI() {
+        const yearSelect = document.getElementById('yearSelect');
+        const monthDisplay = document.getElementById('currentMonthDisplay');
+
+        if (yearSelect) {
+            if (yearSelect.value != window.statsCurrentYear) {
+                yearSelect.value = window.statsCurrentYear;
+            }
+        }
+        if (monthDisplay) {
+            monthDisplay.textContent = window.statsCurrentMonth + '월';
+        }
+    }
+
+    // 통계 탭 활성화 시 달력 초기화 (최초 1회만)
+    $('#stats-tab').on('shown.bs.tab', function(e) {
+        if (!window.statsCalendarInitialized) {
+            initStatsCalendar();
+            window.statsCalendarInitialized = true;
+        } else {
+            // 이미 초기화된 경우 UI만 동기화
+            syncCalendarUI();
+        }
+    });
+
+    // 차트 탭 (파이/라인) 전환 시 달력 상태 유지
+    $('#chartTabs .nav-link').on('click', function(e) {
+        // 현재 값 저장 (탭 전환 중 값이 변경되지 않도록)
+        const savedYear = window.statsCurrentYear;
+        const savedMonth = window.statsCurrentMonth;
+
+        // 클릭 직후 UI 동기화 (setTimeout으로 탭 전환 완료 후 실행)
+        setTimeout(function() {
+            // 저장된 값으로 복원 (혹시 변경되었을 경우 대비)
+            window.statsCurrentYear = savedYear;
+            window.statsCurrentMonth = savedMonth;
+            syncCalendarUI();
+        }, 50);
+    });
+
+    // 차트 탭(파이/라인)의 shown.bs.tab 이벤트에서도 달력 상태 유지
+    $('#pie-tab, #line-tab').on('shown.bs.tab', function(e) {
+        // 탭 전환 완료 후 UI 동기화
+        syncCalendarUI();
+    });
+</script>
+	<script>
+
+		// 폼 요소 및 버튼 변수 정의 (기존 코드를 따름)
+		const $form = document.getElementById('registerForm');
+		const $inputId = document.getElementById('inputId');
+		const $inputName = document.getElementById('inputName');
+		const $inputPhone = document.getElementById('inputPhone');
+		const $inputEmail = document.getElementById('inputEmail');
+		const $inputEmailCheck = document.getElementById('inputEmailCheck');
+		const $zipCode = document.getElementById('zipCode');
+		const $streetAdr = document.getElementById('streetAdr');
+		const $inputAddressDetail = document.getElementById('inputAddressDetail');
+		const $roleSelect = document.getElementById('roleSelect');
+		const $doctorInfoSection = document.getElementById('doctorInfoSection');
+		
+		// 의사 정보 관련 필드 (수정 시 필요)
+		const $hospNameDisplay = document.getElementById('hospNameDisplay');
+		const $hospIdx = document.getElementById('hospIdx');
+		const $inputSpecialty = document.getElementById('inputSpecialty');
+
+		// 비밀번호 필드 (수정 시에는 보통 비어있고, 입력 시에만 업데이트됨)
+		const $password = document.getElementById('password');
+		const $passwordConfirm = document.getElementById('passwordConfirm');
+		
+		
+		const roleSelect = document.getElementById('roleSelect');
+		const doctorInfoSection = document.getElementById('doctorInfoSection');
+		const nameInput = document.getElementById('inputName');
+		const passwordInput = document.getElementById('password');
+		const passwordConfirmInput = document.getElementById('passwordConfirm');
+		const emailInputElement = document.getElementById('inputEmail');
+		const passwordMatchText = document.getElementById('passwordMatchText');
+		const newHospitalId = document.getElementById('newHospitalId');
+		const newHospitalName = document.getElementById('newHospitalName');
+		const newHospitalTel = document.getElementById('newHospitalTel');
+		const newHospitalZipCode = document.getElementById('newHospitalZipCode');
+		const newHospitalAddr1 = document.getElementById('newHospitalAddr1');
+		const newHospitalAddr2 = document.getElementById('newHospitalAddr2');
+		// 약관 동의 관련 요소
+		const agreeAllCheckbox = document.getElementById('agreeAll');
+		const allAgreementCheckboxes = document.querySelectorAll('.agreement-checkboxes input[type="checkbox"]');
+		// 모달 관련 요소
+		const openHospitalModalBtn = document.getElementById('openHospitalModalBtn');
+		const hospitalModal = document.getElementById('hospitalModal');
+		const closeHospitalModalBtns = document.querySelectorAll('#hospitalModal .close-button, #closeHospitalModalBtn');
+		const openAddHospitalFormBtn = document.getElementById('openAddHospitalFormBtn');
+		const newHospitalForm = document.getElementById('newHospitalForm');
+		const cancelAddHospitalBtn = document.getElementById('cancelAddHospitalBtn');
+		
+		// ⭐️⭐️ 새로 추가된 병원 검색/적용 관련 요소 ⭐️⭐️
+		const searchHospitalBtn = document.getElementById('searchHospitalBtn');
+		const hospitalSearchResults = document.getElementById('hospitalSearchResults');
+		const hospitalNameInput = document.getElementById('hospNameDisplay');
+		const hospitalIdInput = document.getElementById('hospIdx');
+	
+		// ⭐️ 초기 로드 시 모달을 명시적으로 숨김 (유지)
+	  	hospitalModal.style.display = 'none';
+	
+	  	// --- 프로필 이미지 업로드 (유지) ---
+	  	const profileImageContainer = document.getElementById('profileImageContainer');
+	  	const profileImageUpload = document.getElementById('profileImageUpload');
+
+	   profileImageContainer.addEventListener('click', () => {
+	       profileImageUpload.click();
+	   });
+
+	   profileImageUpload.addEventListener('change', (event) => {
+	       const file = event.target.files[0];
+	       if (file) {
+	           const reader = new FileReader();
+	           reader.onload = function(e) {
+	               profileImageContainer.querySelector('.profile-image').src = e.target.result;
+	           };
+	           reader.readAsDataURL(file);
+	       }
+	   });
+
+	   // --- 역할 선택에 따른 '의사 정보' 섹션 토글 (유지) ---
+	   function toggleDoctorInfo() {
+	       if (roleSelect.value === 'DOCTOR') {
+	           doctorInfoSection.style.display = 'block';
+	       } else {
+	           doctorInfoSection.style.display = 'none';
+	       }
+	   }
+	   roleSelect.addEventListener('change', toggleDoctorInfo);
+	   toggleDoctorInfo();
+	   // 이메일 유효성 검사 및 중복 체크 함수 호출
+       function validateEmail() {
+       	var emailInput = document.getElementById('inputEmail');
+          	var email = emailInput.value;
+          	if (emailCheck(email)) {        		
+          		$("#emailMessage").text("유효한 이메일 주소입니다.").css({'color':'blue', 'font-weight':'normal'});
+          		checkEmail(); // 유효하면 중복 체크 호출
+          		return true;
+          	} else {        		
+          		$("#emailMessage").text("유효하지 않은 이메일 주소입니다.").css({'color':'red', 'font-weight':'normal'});	
+          		isEmailAvailable = false; // 형식 오류 시 중복 가능성도 false로
+          		return false;
+          	}
+       } 
+
+	   function checkPasswordMatch() {
+	       	const password = passwordInput.value;
+	       	const confirmPassword = passwordConfirmInput.value;
+
+	       	const minLength = 8;
+			const maxLength = 20;
+
+	        // 1. 길이 검사 (8자 이상 20자 이하)
+	        if (password.length < minLength || password.length > maxLength) {	        	
+	        	passwordMatchText.textContent = `비밀번호는 ${minLength}~${maxLength}자 사이여야 합니다.`;
+				passwordMatchText.style.color = '#dc3545';
+				$('#password').focus();
+				return false;
+	        } else {
+	        	// 2. 조합 검사 (영문, 숫자, 특수문자 각각 최소 1개 포함)
+		        const hasLetter = /[a-zA-Z]/.test(password); // 영문 포함
+		        const hasNumber = /[0-9]/.test(password);     // 숫자 포함
+		        // 특수문자 정규식: /[^a-zA-Z0-9]/ -> 영문, 숫자가 아닌 모든 문자
+		        const hasSpecial = /[^a-zA-Z0-9]/.test(password); // 특수문자 포함
+
+		        if (!hasLetter || !hasNumber || !hasSpecial) {            
+		            passwordMatchText.textContent = "비밀번호는 영문, 숫자, 특수문자를 모두 포함해야 합니다.";
+					passwordMatchText.style.color = '#dc3545';
+		            $('#password').focus();
+		            return false;
+		        } else {
+		        	if (password === confirmPassword) {
+		 	           passwordMatchText.textContent = '비밀번호가 일치합니다.';
+		 	           // ⭐️ 화면 설계서에 가깝게 파란색 계열로 변경 ⭐️
+		 	           passwordMatchText.style.color = '#007bff'; 
+		 	           return true;
+		 	       } else {	 	       
+		 	           passwordMatchText.textContent = '비밀번호가 일치하지 않습니다.';
+		 	           // ⭐️ 빨간색으로 변경 ⭐️
+		 	           passwordMatchText.style.color = '#dc3545'; 
+		 	           return false;	           
+		 	       }
+		        }
+	        }	       
+	   }
+	   passwordInput.addEventListener('keyup', checkPasswordMatch);
+	   passwordConfirmInput.addEventListener('keyup', checkPasswordMatch);
+	   emailInputElement.addEventListener('keyup', validateEmail);
+
+	   closeHospitalModalBtns.forEach(btn => {
+	       btn.addEventListener('click', () => {
+	           hospitalModal.style.display = 'none';
+	           newHospitalForm.style.display = 'none';
+	       });
+	   });
+
+	   window.addEventListener('click', (event) => {
+	       if (event.target == hospitalModal) {
+	           hospitalModal.style.display = 'none';
+	           newHospitalForm.style.display = 'none';
+	       }
+	   });
+
+	   // '새 병원 정보 등록' 버튼 클릭 시 폼 표시 (유지)
+	   openAddHospitalFormBtn.addEventListener('click', () => {
+		   newHospitalId.value = ''
+           newHospitalName.value = ''
+           newHospitalZipCode.value= ''
+           newHospitalAddr1.value= ''
+           newHospitalAddr2.value= ''
+           newHospitalTel.value = ''
+	       newHospitalForm.style.display = 'block';
+	   });
+
+	   cancelAddHospitalBtn.addEventListener('click', () => {
+	       newHospitalForm.style.display = 'none';
+	   });
+
+	</script>
+	<script>
+	// script.js
+	$.fn.serializeObject = function() {
+		var obj = new Object();
+		var arr = this.serializeArray();
+		arr.forEach(function(data, index) {
+			obj[data.name] = data.value;
+		})
+		return obj;
+	}
+	
+	
+	
+	let isIdAvailable = false;
+	let isEmailAvailable = true;
+        
+        // **새로 추가된 변수**
+    let isDoctor = true;
+        
+        // 아이디 중복 체크 함수
+       	let checkId = () => {
+       		const id = $('#inputId').val();       		
+       		$.ajax({
+       			url    : "/api/members/checkId",
+       			method : "get",      
+       			data   : {userId : id},
+       			success: function(response){
+       				if(!response){
+       					// 아이디가 중복 됨
+       					$("#idMessage").text("아이디가 중복되었습니다.").css({'color':'blue', 'font-weight':'normal'});
+       					isIdAvailable = false;
+       				} else {
+       					// 아이디가 중복되지 않음
+       					$("#idMessage").text("사용 가능한 아이디입니다.").css({'color':'red', 'font-weight':'normal'});
+       					isIdAvailable = true;
+       					
+       				}
+       			},
+       			error  : function(error){
+       				// 통신 실패
+       				$("#idMessage").text("통신에러");
+       			}       			
+       		});
+        }
+       	
+       	let checkEmail = () => {     		
+       		const email = $('#inputEmail').val();
+       		const emailCheckInput = $('#inputEmailCheck').val();
+       		console.log(`${email} : ${emailCheckInput}`);
+       		if(emailCheckInput === email){
+        		$("#emailMessage").text("사용 가능한 이메일입니다.").css({'color':'blue', 'font-weight':'normal'});
+				isEmailAvailable = true;
+				return true;
+        	} else {
+	       		$.ajax({
+	       			url    : "/api/members/checkEmail",
+	       			method : "get",
+	       			data   : {email : email},
+	       			success: function(response){
+	       				if(!response){
+	       					// 이메일이 중복 됨
+	       					$("#emailMessage").text("이메일이 중복되었습니다.").css({'color':'red', 'font-weight':'normal'});
+	       					isEmailAvailable = false;
+	       				} else {
+	       					// 이메일이 중복되지 않음
+	       					$("#emailMessage").text("사용 가능한 이메일입니다.").css({'color':'blue', 'font-weight':'normal'});
+	       					isEmailAvailable = true;
+	       					
+	       				}
+	       			},
+	       			error  : function(error){
+	       				// 통신 실패
+	       				$("#emailMessage").text("통신에러");
+	       			}       			
+	       		});
+        	}
+        }
+       	
+     		
+       	
+     // 폼 태그 제출 검토
+        $('#regBtn').on('click', function(e){        	
+        	e.preventDefault();
+        	const inputName = $('#inputName').val();
+        	if(inputName.length>0){
+        		
+        	} else {
+        		e.preventDefault();
+        		alert("이름 항목은 필수입니다.");
+        		nameInput.focus();
+              	return;
+        	}
+        	
+        	
+        	const pw = $('#password').val();
+        	const pwConfirm = $('#passwordConfirm').val();
+        	if(pw.length>0 && pwConfirm.length>0 ){
+           		// 2. 비밀번호 일치 확인
+               	if(!checkPasswordMatch()){
+               		e.preventDefault();
+               		alert("비밀번호와 비밀번호 확인은 필수입니다.");
+               		passwordInput.focus();
+                  		return;
+               	}
+        	}
+        	
+        	// 3. 전화번호 형식 확인 (기존 함수는 반환값만 있고 호출이 없었음)
+        	if (!isHyphenPhoneNumber($('#inputPhone').val())) {
+                e.preventDefault();
+                alert("휴대전화번호 형식을 확인해 주세요. (010-XXXX-XXXX)");
+                return;
+            }
+        	
+        	
+        	
+        	if(!isEmailAvailable){ // 중복 체크 결과 확인
+        		e.preventDefault();
+        		const emailInput = $('#inputEmail').val();        		
+        		if(emailInput.length>0){
+        		// 4. 이메일 유효성 및 중복 확인
+					if(!validateEmail()){ // validateEmail()이 false 반환하면 형식 오류
+						e.preventDefault();
+						alert("유효한 이메일 주소를 입력해 주세요.");
+						return;
+					}
+        		} else {
+        			$("#emailMessage").text("이메일 중복체크는 필수입니다.").css({'color':'red', 'font-weight':'normal'});	
+        			isEmailAvailable = false;
+        			return;
+        		}
+	        } else {
+	        	const emailInput = $('#inputEmail').val();
+        		var resultDiv = document.getElementById('emailMessage');
+	        	if(emailInput.length>0){
+	        		
+	        	} else {
+	        		$("#emailMessage").text("이메일 중복체크는 필수입니다.").css({'color':'red', 'font-weight':'normal'});	        		        		
+        			isEmailAvailable = false;
+        			return;
+	        	}
+	        }
+        	console.log(`isDoctor : ${isDoctor}`);
+            // 5. DOCTOR 필드 필수 검사 추가
+            if (roleSelect.value === 'DOCTOR') {
+            	const hospIdx = $('#hospIdx').val();
+            	const inputSpecialty = $('#inputSpecialty').val();
+            	console.log(`${hospIdx.length} : ${inputSpecialty.length}`);
+                if (hospIdx.length > 0 && inputSpecialty.length > 0 ) {
+                	
+                } else {
+                    e.preventDefault();
+                    alert("의사 회원은 병원 선택과 전문 분야 입력이 필수입니다.");
+                    return;
+                }
+            }
+        	// 6. 마케팅 정보 동의 처리
+        	if($('#checkTerms3').is(':checked')) {
+        		document.getElementById('agreements').value = "Y";
+        	} else {
+        		document.getElementById('agreements').value = "N";
+        	}
+        	
+        	const form = document.getElementById('registerForm');
+        	
+        	// 1. FormData 객체를 폼 요소로부터 직접 생성합니다.
+        	// 이렇게 하면 일반 필드와 파일 필드가 모두 포함됩니다.
+        	const formData = new FormData(form);
+        	formData.append('id',MEMBER_ID);
+        	formData.append('role',"DOCTOR");
+        	       
+        	$.ajax({
+        		  url: "/api/members/update",
+        		  type: "PUT",
+        		  processData: false,
+        		  contentType: false,
+        		  data: formData,
+        		  success: function(savedMember, status, xhr) {
+        		    if (xhr.status === 201) {
+        		    	alert(`회원 정보 수정 완료! 회원 이름: ${savedMember.name}`);
+        		    	loadMemberData(`${savedMember.id}`);
+        		    } else {
+						alert("회원 수정 실패: " + xhr.status);
+        		    }
+        		  },
+        		  error: function(xhr, status, error) {
+        		    console.error("에러 발생:", error);
+        		    alert("정보 수정 중 오류가 발생했습니다.");
+        		  }
+        		});
+        });      
+        // 주소 검색
+        $("#buttonPostcodeSearch").on("click",function (e) {
+        	e.preventDefault();
+        	new daum.Postcode({
+                oncomplete: function(data) {
+                	// 우편번호
+                    $("#zipCode").val(data.zonecode);
+                    // 도로명 주소
+                    $("#streetAdr").val(data.roadAddress);
+                }
+            }).open();      	
+        });
+        
+        // 전화번호 형식 검사
+        function isHyphenPhoneNumber(phone) {  
+        	const regex = /^0\d{1,2}-\d{3,4}-\d{4}$/;  
+        	return regex.test(phone);
+        }
+        
+        // 이메일 형식 검사
+        function emailCheck(email_address){     
+        	email_regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i;
+        	if(!email_regex.test(email_address)){ 
+        		return false; 
+        	}else{
+        		return true;
+        	}
+        }
+     	
+        // =======================================================
+        // ** [병원 선택/추가 팝업] 및 [역할 선택] 로직 추가 **
+        // =======================================================
+        
+        // 역할 변경 시 필드 표시/숨김
+        $('#roleSelect').on('change', function() {
+            const role = $(this).val();
+            const $doctorFields = $('#doctorInfoSection');
+            const $hospIdx = $('#hospIdx');
+            const $inputSpecialty = $('#inputSpecialty');
+
+            if (role === 'DOCTOR') {
+                $doctorFields.slideDown(200); // 의사 필드 표시
+                isDoctor = true;
+                // 필수 속성은 폼 제출 시 자바스크립트로 검증
+
+            } else {
+                $doctorFields.slideUp(200); // 의사 필드 숨김
+                isDoctor = false;
+                
+                // USER로 변경 시 불필요한 값 제출 방지를 위해 비워줍니다.
+                $hospIdx.val(''); 
+                $('#hospNameDisplay').val('');
+                $inputSpecialty.val('');
+            }
+        }).trigger('change'); // 페이지 로드 시 초기 상태 적용
+
+        // [병원 검색 버튼] 클릭 이벤트
+        $('#buttonHospitalSearch').on('click', function(e) {
+            e.preventDefault();
+            const url = '/hospital/searchPopup'; // HospitalPageController의 URL
+            const name = 'hospitalSearchPopup';
+            const features = 'width=650,height=750,scrollbars=yes';
+            window.open(url, name, features);
+        });
+
+        // [콜백 함수] 팝업에서 선택된 병원 정보를 받기 위한 함수
+        // 팝업 창에서 window.opener.setHospitalSelection(id, name)을 호출합니다.
+        window.setHospitalSelection = function(hospIdx, hospName) {
+            $('#hospNameDisplay').val(hospName); // 사용자에게 표시되는 병원 이름
+            $('#hospIdx').val(hospIdx); // 실제로 서버에 전송될 병원 PK
+        };
+        
+     // 1. 병원 검색 (REST API 호출)
+        function searchHospitals() {
+            const name = $('#hospitalSearchInput').val();
+            if (!name.trim()) {
+                $('#hospitalSearchResults').html('<p class="text-danger text-center">검색할 병원 이름을 입력해주세요.</p>');
+                return;
+            }
+
+            fetch('/api/hospitals/search?name=' + encodeURIComponent(name))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('네트워크 응답이 올바르지 않습니다.');
+                    }
+                    return response.json();
+                })
+                .then(data => displayResults(data))
+                .catch(error => {
+                    console.error('Error fetching hospitals:', error);
+                    $('#hospitalSearchResults').html('<p class="text-danger text-center">병원 검색 중 오류가 발생했습니다.</p>');
+                });
+        }
+     // 2. 검색 결과 표시
+        function displayResults(hospitals) {
+            const resultsDiv = $('#hospitalSearchResults');
+            resultsDiv.empty(); // 기존 결과 비우기
+            
+            if (hospitals.length === 0) {
+                resultsDiv.append('<p class="text-danger text-center">검색할 병원 이름을 입력해주세요.</p>');
+                return;
+            }
+
+            hospitals.forEach(hospital => {
+                const item = `
+                	<div class="hospital-item">                        
+                		<p class="hospital-name">${hospital.hospName}</p>
+                		<p class="hospital-address">${hospital.addr1 ? hospital.addr1 : '주소 정보 없음'}</p>
+                		<div class="item-actions">
+							<button class="btn btn-success select-hospital-btn"	data-hospital-id="${hospital.hospIdx}" data-hospital-name="${hospital.hospName.replace(/'/g, "\\'")}">선택</button>
+							<button class="btn btn-info edit-hospital-btn" data-hospital-id="${hospital.hospIdx}">수정</button>
+                       	</div>                        
+                    </div>
+                `;
+                resultsDiv.append(item);
+            });
+        }
+	</script>
+	<script>
+        // 주소 검색 함수
+        $("#searchNewHospitalZipCodeBtn").on("click", function(e) {
+            e.preventDefault();
+            new daum.Postcode({
+                oncomplete: function(data) {
+                    $("#newHospitalZipCode").val(data.zonecode);
+                    $("#newHospitalAddr1").val(data.roadAddress);
+                    $("#newHospitalAddr2").focus(); // 상세 주소 입력으로 포커스
+                }
+            }).open();
+        });
+
+        // 폼 제출 이벤트 처리
+        $('#saveNewHospitalBtn').on('click', function(e) {
+            e.preventDefault();          
+            
+            const hospitalData = {
+            	hostIdx: newHospitalId.value,
+                hospName: newHospitalName.value,
+                zipCode: newHospitalZipCode.value,
+                addr1: newHospitalAddr1.value,
+                addr2: newHospitalAddr2.value,
+                tel: newHospitalTel.value
+            };
+            //console.log("saveNewHospitalBtn hospitalData : " + JSON.stringify(hospitalData));
+            // 필드 유효성 검사 (간단하게)
+            if (!hospitalData.hospName || !hospitalData.tel || !hospitalData.zipCode || !hospitalData.addr1) {
+                alert('필수 정보를 모두 입력해주세요.');
+                return;
+            }            
+            
+            if(!hospitalData.hostIdx || hospitalData.hostIdx==0 ){
+            	fetch('/api/hospitals/save', { // HospitalController의 POST 엔드포인트
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(hospitalData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        // 서버에서 발생한 오류 메시지를 받을 수 있다면 더 상세하게 처리
+                        return response.json().then(err => { throw new Error(err.message || '병원 등록 실패'); });
+                    }
+                    return response.json();
+                })
+                .then(newHospital => {
+    	            alert(`'${newHospital.hospName}' 병원이 성공적으로 등록되었습니다.`);
+    	            searchHospitals();
+    	            newHospitalForm.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('병원 등록 중 오류 발생:', error);
+                    alert('병원 등록 중 오류가 발생했습니다: ' + error.message);
+                });
+            } else {
+            	let hospitalIdToEdit = hospitalData.hostIdx;
+            	fetch(`/api/hospitals/${hospitalIdToEdit}`, { // HospitalController의 POST 엔드포인트
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(hospitalData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        // 서버에서 발생한 오류 메시지를 받을 수 있다면 더 상세하게 처리
+                        return response.json().then(err => { throw new Error(err.message || '병원 수정 실패'); });
+                    }
+                    return response.json();
+                })
+                .then(newHospital => {
+    	            alert(`'${newHospital.hospName}' 병원이 성공적으로 수정되었습니다.`);
+    	            searchHospitals();
+    	            newHospitalForm.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('병원 수정 중 오류 발생:', error);
+                    alert('병원 수정 중 오류가 발생했습니다: ' + error.message);
+                });
+            }
+        });
+        
+     	// ⭐️⭐️ 병원 검색 버튼 클릭 시 검색 결과 표시 ⭐️⭐️
+		searchHospitalBtn.addEventListener('click', function() {
+            // CSS에서 display: none; 되어 있던 요소를 보이게 합니다.
+    		searchHospitals();
+            hospitalSearchResults.style.display = 'block'; 
+        });
+     	
+		 // --- 병원 검색 및 추가 모달 제어 (유지) ---
+	    openHospitalModalBtn.addEventListener('click', () => {
+			//alert("병원 검색 모달");
+			$("#newHospitalId").val(0);
+	        hospitalModal.style.display = 'flex';
+	    });
+		 
+	 	// ⭐️⭐️ 병원 선택 버튼 클릭 시 메인 폼에 적용 ⭐️⭐️
+	    hospitalSearchResults.addEventListener('click', function(event) {	    	
+	        if (event.target.classList.contains('select-hospital-btn')) {
+	            const hospitalItem = event.target.closest('.hospital-item');
+	            
+	            // 병원 이름과 ID (data- 속성 사용) 가져오기
+	            const selectedHospitalName = hospitalItem.querySelector('.hospital-name').textContent;
+	            const selectedHospitalId = event.target.dataset.hospitalId;
+	            // 메인 폼에 적용
+	            hospitalNameInput.value = selectedHospitalName;
+	            hospitalIdInput.value = selectedHospitalId;
+	            
+	            // 모달 닫기
+	            hospitalModal.style.display = 'none';
+	            newHospitalForm.style.display = 'none';
+	            
+	            //alert(`"${selectedHospitalName}" 병원을 선택했습니다.`);
+	        } else if (event.target.classList.contains('edit-hospital-btn')) {
+	            const hospitalIdToEdit = event.target.dataset.hospitalId;
+	            
+	            
+	            //alert(`병원 ID ${hospitalIdToEdit} 수정 폼을 띄웁니다.`);
+	            newHospitalForm.style.display = 'block'; 
+	            
+	            $.ajax({
+	                url: `/api/hospitals/${hospitalIdToEdit}`, // URL 수정
+	                method: 'GET',
+	                contentType: 'application/json', // GET 요청에서는 보통 생략하지만 명확히 지정
+	                dataType: 'json', // 서버로부터 받을 데이터 형식
+	                
+	                success: function(hospitalData) {
+	                    // HTTP 상태 코드가 200 (OK)일 때 실행됩니다.
+	                    
+	                    // ⭐️⭐️ 객체의 속성값을 직접 할당합니다. ⭐️⭐️
+	                    if (typeof newHospitalId !== 'undefined') {
+	                        newHospitalId.value = hospitalData.hospIdx || '';
+	                    }
+	                    newHospitalName.value = hospitalData.hospName || '';
+	                    newHospitalTel.value = hospitalData.tel || '';
+	                    newHospitalZipCode.value = hospitalData.zipCode || '';
+	                    newHospitalAddr1.value = hospitalData.addr1 || '';
+	                    newHospitalAddr2.value = hospitalData.addr2 || '';
+
+	                    // 폼과 모달을 보이게 합니다.
+	                    // 병원 수정 시에는 newHospitalForm을 먼저 보여야 합니다.
+	                    if (typeof newHospitalForm !== 'undefined') {
+	                         newHospitalForm.style.display = 'block'; 
+	                    }
+	                    hospitalModal.style.display = 'flex';
+	                },
+	                
+	                error: function(xhr, status, error) {
+	                    // 서버 응답이 4xx, 5xx 에러이거나 네트워크 오류 시 실행됩니다.
+	                    console.error('병원 조회 중 오류 발생: ', status, error);
+	                    
+	                    let errorMessage = '병원 조회 중 오류가 발생했습니다.';
+	                    if (xhr.responseJSON && xhr.responseJSON.message) {
+	                         errorMessage = xhr.responseJSON.message;
+	                    }
+	                    alert(errorMessage);
+	                }
+	            });
+	        }
+	    });
+    </script>
+	<script>
+    /**
+     * 1. 회원 정보 로드 및 폼에 설정하는 함수
+     * @param {number} memberId - 조회할 회원의 ID (세션 등에서 가져와야 함)
+     */
+    async function loadMemberData(memberId) {
+        // 실제 API 엔드포인트로 변경해야 합니다.        
+        const apiUrl = `/api/members/info/${memberId}`; 
+
+        try {
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                throw new Error('회원 정보를 불러오는 데 실패했습니다.');
+            }
+            
+            const member = await response.json();
+            
+            // ⭐️ 폼 필드에 데이터 설정 ⭐️
+            // ID와 역할은 수정 불가능하도록 설정 (일반적인 경우)
+            $inputId.value = member.userId;
+            $inputId.readOnly = true; // ID 수정 불가
+            
+            $inputName.value = member.name || '';
+            $inputPhone.value = member.phone || '';
+            $inputEmail.value = member.email || '';
+            $inputEmailCheck.value = member.email || '';
+
+            // 주소 정보 설정
+            $zipCode.value = member.zipCode || '';
+            $streetAdr.value = member.addr1 || '';
+            $inputAddressDetail.value = member.addr2 || '';
+
+            // 역할 설정 및 의사 섹션 표시
+            $roleSelect.value = member.role || 'USER';
+            $roleSelect.disabled = true; // 역할 수정 불가 (일반적인 경우)
+
+            if (member.role === 'DOCTOR') {
+                $doctorInfoSection.style.display = 'block';
+                
+                // 의사 정보 설정
+                $inputSpecialty.value = member.specialty || '';
+                
+                // 병원 정보 설정
+                if (member.hospIdx) {
+                    $hospIdx.value = member.hospIdx;
+                    $hospNameDisplay.value = member.hospName;
+                }
+            }
+            if(member.agreementYn==='Y'){
+            	$('#checkTerms3').prop('checked',true);
+            	$('#agreements').val('Y');            	
+            } else {
+            	$('#checkTerms3').prop('checked',false);
+            	$('#agreements').val('N');
+            }
+            // 프로필 이미지 설정 (만약 URL이 있다면)
+             if (member.profileImg) {
+                 document.querySelector('.profile-image').src = member.profileImg;
+                 $('#oldImgPath').val(member.profileImg);
+             }
+
+        } catch (error) {
+            console.error("회원 정보 로드 오류:", error);
+            alert("회원 정보를 가져오는 중 오류가 발생했습니다: " + error.message);
+        }
+    }
+
+    // 💡 페이지 로드 시 현재 로그인된 사용자 정보 로드 (예시: memberId=1)
+    // 실제 환경에서는 세션 또는 토큰에서 memberId를 가져와야 합니다.
+    window.addEventListener('load', () => {
+        const loggedInMemberId = MEMBER_ID; // ⭐️ 실제 로그인된 사용자 ID로 변경 필요 ⭐️
+        loadMemberData(loggedInMemberId);
+    });
+</script>
+	<script>
+//=================================================================
+//3. 마이페이지 - 환자 배정 로직 (최종 완성 버전)
+//🚨 jQuery 라이브러리가 HTML에 로드되어 있어야 작동합니다.
+//=================================================================
+
+$(document).ready(function() {
+ 
+ // ⭐️ 탭이 열릴 때마다 실행되도록 보장하는 Bootstrap 이벤트 리스너
+ $('#assign-tab').on('shown.bs.tab', function (e) {
+     
+     // 탭이 열릴 때마다 모든 로직을 초기화하고 다시 붙여줍니다.
+     initializeAssignmentLogic(); 
+ });
+
+ // 만약 '환자 배정' 탭이 기본으로 열리는 탭이라면, 로드 시에도 실행되도록 트리거
+ if ($('#assign-tab').hasClass('active')) {
+     $('#assign-tab').trigger('shown.bs.tab');
+ }
+
+	// ⭐️⭐️ initializeAssignmentLogic 함수 정의 ⭐️⭐️
+	function initializeAssignmentLogic() {
+	    
+	    // 1. 필수 요소 찾기 (셀렉터 수정됨)
+	    const unassignedList = document.getElementById('unassignedPatientList');
+	    const assignedList = document.getElementById('assignedPatientList');
+	    
+	    // ✅ >> 버튼 (title 속성으로 명확히 지정)
+	    const assignBtn = document.querySelector('#assign-pane button[title="선택 환자 배정"]'); 
+	    // ✅ << 버튼
+	    const unassignBtn = document.querySelector('#assign-pane button[title="선택 환자 배정 해제"]');
+	    
+	    // 🚨 충돌 발생 요소 수정: .footer-actions 클래스 내부의 버튼을 찾도록 명확히 지정합니다.
+	    const saveButton = document.querySelector('.footer-actions .btn-submit-small'); 
+	    
+	    const assignedTableBody = document.querySelector('.patient-table tbody');
+	    const searchInput = document.querySelector('#assign-pane input[placeholder="환자 이름 검색..."]');
+	    const searchButton = document.querySelector('#assign-pane button i.fa-search').closest('button');
+
+	    if (!unassignedList || !assignedList || !assignBtn || !unassignBtn) {
+	        console.error("환자 배정 관련 필수 요소를 찾을 수 없습니다.");
+	        return;
+	    }
+
+	    // --- 3. [이벤트] 리스트 항목 선택 로직 (유지) ---
+	    $(unassignedList).off('click').on('click', '.list-group-item', function() {
+	        $(unassignedList).find('.list-group-item').removeClass('active');
+	        $(this).addClass('active');
+	    });
+	    
+	    $(assignedList).off('click').on('click', '.list-group-item', function() {
+	        $(assignedList).find('.list-group-item').removeClass('active');
+	        $(this).addClass('active');
+	    });
+
+
+	    // --- 4. [이벤트] '>>' (배정) 버튼 클릭 로직 (보강된 로직 유지) ---
+	    assignBtn.onclick = () => {
+	        const $selectedItem = $(unassignedList).find('.list-group-item.active');
+	        
+	        if ($selectedItem.length > 0) { 
+	            const selectedItemDOM = $selectedItem[0]; 
+	            
+	            $selectedItem.removeClass('active'); 
+	            selectedItemDOM.textContent = selectedItemDOM.textContent.replace(' (미배정)', '') + ' (배정됨)';
+	            
+	            assignedList.appendChild(selectedItemDOM);
+	            
+	             
+	        } else {
+	            // ⭐️ 정상적인 경고창: 선택 안 했을 경우
+	            alert('배정할 환자(왼쪽 리스트)를 먼저 클릭하여 선택해 주세요.');
+	        }
+	    };
+
+	    // --- 5. [이벤트] '<<' (배정 해제) 버튼 클릭 로직 (유지) ---
+	    unassignBtn.onclick = () => {
+	        const $selectedItem = $(assignedList).find('.list-group-item.active');
+	        
+	        if ($selectedItem.length > 0) { 
+	            const selectedItemDOM = $selectedItem[0];
+	            
+	            $selectedItem.removeClass('active');
+	            unassignedList.appendChild(selectedItemDOM);
+	            selectedItemDOM.textContent = selectedItemDOM.textContent.replace(' (배정됨)', '') + ' (미배정)';
+
+	             
+	        } else {
+	            alert('배정 해제할 환자를 선택해 주세요.');
+	        }
+	    };
+
+
+	    // --- 6. [이벤트] 환자 이름 검색 버튼 활성화 (유지) ---
+	    searchButton.onclick = () => {
+	        // ... (이전 코드 유지) ...
+	        const searchTerm = searchInput.value.trim().toLowerCase();
+	        const allItems = unassignedList.querySelectorAll('.list-group-item');
+
+	        allItems.forEach(item => {
+	            const patientName = item.textContent.toLowerCase();
+	            if (patientName.includes(searchTerm) || searchTerm === '') {
+	                item.style.display = 'block'; 
+	            } else {
+	                item.style.display = 'none'; 
+	            }
+	        });
+	    };
+	    searchInput.addEventListener('keypress', (e) => {
+	        if (e.key === 'Enter') {
+	            e.preventDefault();
+	            searchButton.click();
+	        }
+	    });
+
+
+	    // --- 7. [이벤트] 최종 배정 정보 저장 버튼 활성화 (유지) ---
+	    saveButton.onclick = () => {
+	        const finalAssignedItems = assignedList.querySelectorAll('.list-group-item');
+	        const patientIds = Array.from(finalAssignedItems).map(item => {
+	            return item.textContent.split(' ')[0]; 
+	        });
+
+	        // ⭐️ 이 로직이 이제 최종 저장 버튼에서만 실행됩니다.
+	        if (patientIds.length === 0) {
+	            alert('배정된 환자가 없습니다. 배정 후 저장해 주세요.');
+	            return;
+	        }
+	        
+	        console.log("⭐ 최종 배정할 환자 ID 목록:", patientIds);
+	        alert(`✅ 총 ${patientIds.length}명의 환자 배정 정보가 저장되었습니다! (서버 전송 시뮬레이션)`);
+	    };
+	}
+});
+</script>
+	<script>
+function loadUnassignedPatients(currentMemberId) {
+    const unassignedPatientList = $('#unassignedPatientList');
+    const assignedPatientList = $('#assignedPatientList');
+    unassignedPatientList.empty(); // 기존 리스트를 비웁니다.
+    assignedPatientList.empty();
+    // 로딩 상태 표시
+    unassignedPatientList.append('<div class="text-center p-3 text-muted" id="loadingMessage"><i class="fas fa-spinner fa-spin me-2"></i> 환자 목록을 불러오는 중...</div>');
+
+    $.ajax({
+        url: `/api/members/users/unassigned/${currentMemberId}`, // role이 'USER'인 회원 목록 API 엔드포인트
+        method: 'GET',
+        dataType: 'json',
+        success: function(members) {
+            $('#loadingMessage').remove(); // 로딩 메시지 제거
+
+            if (members.length === 0) {
+                // 환자가 없을 경우 메시지 표시
+                unassignedPatientList.append('<div class="text-center p-3 text-muted"><i class="fas fa-info-circle me-2"></i> 미배정 환자가 없습니다.</div>');
+                return;
+            }
+
+            // 리스트에 환자 데이터 추가
+            members.forEach(function(member) {
+                // 서버 응답 Member 객체의 필드를 사용합니다. (예: member.name, member.userId)
+                const patientItem = `
+                    <button type="button" 
+                            class="list-group-item list-group-item-action" 
+                            data-member-id="${member.id}" 
+                            data-user-id="${member.userId}">
+                        ${member.name} (${member.userId})
+                    </button>`;
+                    unassignedPatientList.append(patientItem);
+            });
+            
+            // ⭐️ 선택/배정 해제 기능을 위한 이벤트 리스너를 여기에 추가합니다.
+            // attachPatientSelectionListeners();
+        },
+        error: function(xhr, status, error) {
+            $('#loadingMessage').remove(); // 로딩 메시지 제거
+            // 오류 메시지 표시
+            unassignedPatientList.append('<div class="text-center p-3 text-danger"><i class="fas fa-exclamation-triangle me-2"></i> 데이터 로드 중 오류 발생</div>');
+            console.error("미배정 환자 로드 실패:", status, error);
+            console.error("응답:", xhr.responseText);
+        }
+    });
+}
+</script>
+	<script>
+/**
+ * 현재 의사에게 배정된 환자 목록을 가져와 테이블(.patient-table tbody)에 표시
+ * @param {number} currentMemberId 현재 로그인한 의사의 Member ID
+ */
+function loadAssignedPatientsTable(currentMemberId) {	 
+    const tableBody = $('.patient-table tbody');
+    tableBody.empty(); // 기존 내용을 비웁니다.
+    
+    // 로딩 상태 표시
+    tableBody.append('<tr><td colspan="5" class="text-center text-muted p-3"><i class="fas fa-spinner fa-spin me-2"></i> 배정 환자 목록을 불러오는 중...</td></tr>');
+
+    // ⭐️ /api/members/assigned/users/{memberId} 엔드포인트가 있다고 가정
+    $.ajax({
+        url: `/api/members/users/assigned/${currentMemberId}`,
+        method: 'GET',
+        dataType: 'json',
+        success: function(members) {
+            tableBody.empty();
+            
+            if (members==null || members.length === 0) {
+                // 배정된 환자가 없을 경우
+                tableBody.append('<tr id="noAssignedPatients"><td colspan="5" class="text-center text-muted p-3"><i class="fas fa-info-circle me-2"></i> 현재 배정된 환자가 없습니다.</td></tr>');
+                return;
+            }
+
+            // 테이블에 환자 데이터 추가
+            members.forEach(function(member, index) {
+                // 환자 상태: 1=경증(기본), 2=중증
+                const patientStatus = member.patientStatus || 1;
+                const isSevere = patientStatus === 2;
+                const statusBtn = isSevere
+                    ? `<button class="btn btn-sm btn-danger patient-status-btn" data-member-id="${member.id}" data-status="2" title="클릭하여 경증으로 변경">중증 🔥</button>`
+                    : `<button class="btn btn-sm btn-success patient-status-btn" data-member-id="${member.id}" data-status="1" title="클릭하여 중증으로 변경">경증</button>`;
+
+                const tableRow = `
+                    <tr data-member-id="${member.id}">
+                        <td>${index + 1}</td>
+                        <td>${member.userId}</td>
+                        <td>${member.name}</td>
+                        <td>${member.phone || 'N/A'}</td>
+                        <td>${statusBtn}</td>
+                    </tr>`;
+                tableBody.append(tableRow);
+            });
+        },
+        error: function(xhr, status, error) {
+            tableBody.empty();
+            tableBody.append('<tr><td colspan="5" class="text-center text-danger p-3"><i class="fas fa-exclamation-triangle me-2"></i> 테이블 데이터 로드 중 오류 발생</td></tr>');
+            console.error("배정 환자 테이블 로드 실패:", status, error);
+        }
+    });
+}
+</script>
+	<script>
+$('#saveAssignmentButton').on('click', function() {
+	
+	// 1. 가져온 값을 저장할 배열을 선언합니다.
+	const assignedPatientsList = [];
+
+	// 2. #assignedPatientList 영역 내의 모든 리스트 아이템(button)을 순회합니다.
+	$('#assignedPatientList button').each(function() {
+	    const patientPk = $(this).data('member-id');
+	    assignedPatientsList.push(patientPk);
+	});
+
+	// 결과 확인 (아이디만 추출했을 경우)
+	console.log("배정된 환자 아이디:", assignedPatientsList); 
+	// 예시 출력 (이미지를 기반): ["dodak", "organbird", "dodak12", "dodak1"]
+    
+
+
+    // ***************************************************************
+    // 📢 중요: 서버는 보통 DB의 고유 정수 ID (Member.id)를 원합니다.
+    // ---------------------------------------------------------------
+    // 현재 코드는 "환자 아이디" (user_001 등) 문자열을 수집합니다.
+    // 만약 서버에서 DB의 고유 ID (PK, Integer 타입)를 원한다면,
+    // HTML에 data-patient-id='101'와 같은 속성을 추가하고, 
+    // const patientId = $(this).data('patient-db-id'); 로 추출해야 합니다.
+    // ***************************************************************
+
+
+    const assignmentData = {
+        memberId: MEMBER_ID, // 의사 PK
+        // 만약 서버가 문자열 ID를 받는다면 assignedPatientIds: assignedPatientUserIds 사용
+        // 만약 서버가 숫자 PK를 받는다면 assignedPatientIds: assignedPatientDBIds 사용 (별도 추출 필요)
+        assignedPatientIds: assignedPatientsList // **현재는 문자열 ID 배열**
+    };
+    //console.log("JSON.stringify(assignmentData) : " + JSON.stringify(assignmentData));
+    // AJAX/Fetch call to the new endpoint
+    if(assignmentData.assignedPatientIds.length>0){
+    	$.ajax({
+            url: '/api/members/assignments',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(assignmentData),
+            success: function(response) {
+                alert('✅ 배정 정보가 성공적으로 저장되었습니다.');
+                // 저장 후 추가 로직 (예: 페이지 새로고침 또는 UI 업데이트)
+             	// 1. 미배정 환자 리스트 로드
+                loadUnassignedPatients(MEMBER_ID);
+                
+                // 2. 배정된 환자 테이블 로드
+                loadAssignedPatientsTable(MEMBER_ID);
+            },
+            error: function(xhr, status, error) {
+                alert('❌ 배정 정보 저장 중 오류가 발생했습니다: ' + xhr.responseText);
+            }
+        }); 
+    } else {
+    	alert('❌ 배정될 환자가 없습니다.');
+    }
+
+});
+</script>
+
+<!-- 환자 상태 토글 및 중증 환자 알림 기능 -->
+<script>
+// 환자 상태 토글 버튼 클릭 이벤트 (이벤트 위임)
+$(document).on('click', '.patient-status-btn', function() {
+    const btn = $(this);
+    const memberId = btn.data('member-id');
+    const currentStatus = btn.data('status');
+    const newStatus = currentStatus === 2 ? 1 : 2; // 토글
+
+    if (!confirm(newStatus === 2 ? '해당 환자를 중증으로 변경하시겠습니까?' : '해당 환자를 경증으로 변경하시겠습니까?')) {
+        return;
+    }
+
+    $.ajax({
+        url: `/api/members/${memberId}/patient-status`,
+        method: 'PATCH',
+        contentType: 'application/json',
+        data: JSON.stringify({ patientStatus: newStatus }),
+        success: function(response) {
+            // 버튼 상태 업데이트
+            if (newStatus === 2) {
+                btn.removeClass('btn-success').addClass('btn-danger');
+                btn.html('중증 🔥');
+                btn.attr('title', '클릭하여 경증으로 변경');
+            } else {
+                btn.removeClass('btn-danger').addClass('btn-success');
+                btn.html('경증');
+                btn.attr('title', '클릭하여 중증으로 변경');
+            }
+            btn.data('status', newStatus);
+
+            // 중증 환자 알림 목록 갱신
+            loadSeverePatientsAlert(MEMBER_ID);
+
+            alert(newStatus === 2 ? '중증 환자로 변경되었습니다.' : '경증 환자로 변경되었습니다.');
+        },
+        error: function(xhr, status, error) {
+            console.error('환자 상태 변경 실패:', error);
+            alert('환자 상태 변경 중 오류가 발생했습니다.');
+        }
+    });
+});
+
+// 중증 환자 알림 목록 로드
+function loadSeverePatientsAlert(memberId) {
+    const alertList = $('#dangerAlertList');
+
+    $.ajax({
+        url: `/api/members/severe/${memberId}`,
+        method: 'GET',
+        dataType: 'json',
+        success: function(patients) {
+            // 목록 초기화 (헤더 유지)
+            alertList.empty();
+            alertList.append('<h6 class="dropdown-header text-danger">🚨 심층 면담 필요 환자</h6>');
+
+            if (!patients || patients.length === 0) {
+                alertList.append('<li><span class="dropdown-item text-muted">현재 중증 환자가 없습니다.</span></li>');
+            } else {
+                patients.forEach(function(patient) {
+                    const maskedName = patient.name.charAt(0) + '*' + patient.name.slice(2);
+                    alertList.append(`
+                        <li>
+                            <a class="dropdown-item severe-patient-item" href="#" data-patient-id="${patient.id}" data-patient-name="${patient.name}">
+                                <span>${maskedName}</span>
+                                <span class="fire-icon-right">🔥</span>
+                            </a>
+                        </li>
+                    `);
+                });
+            }
+
+            alertList.append('<li><hr class="dropdown-divider"></li>');
+            alertList.append('<li><a class="dropdown-item text-muted" href="#" onclick="showAllSeverePatients(); return false;">전체 위험군 보기...</a></li>');
+
+            // 알림 아이콘 업데이트 (중증 환자가 있으면 표시)
+            const alertIcon = $('#dangerAlertIcon i');
+            if (patients && patients.length > 0) {
+                alertIcon.removeClass('text-muted').addClass('text-danger');
+            } else {
+                alertIcon.removeClass('text-danger').addClass('text-muted');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('중증 환자 목록 로드 실패:', error);
+        }
+    });
+}
+
+// 중증 환자 클릭 시 이달의 마음 통계 탭으로 이동 및 환자 선택
+$(document).on('click', '.severe-patient-item', function(e) {
+    e.preventDefault();
+    const patientId = $(this).data('patient-id');
+    const patientName = $(this).data('patient-name');
+
+    // 1. 이달의 마음 통계 탭 활성화
+    $('#stats-tab').trigger('click');
+
+    // 2. 환자 선택 드롭다운에서 해당 환자 선택 (탭 전환 후 드롭다운 로드 대기)
+    setTimeout(function() {
+        const patientSelect = $('#patientSelect');
+        if (patientSelect.length) {
+            // 옵션 중 해당 환자 ID를 가진 항목 선택
+            const optionExists = patientSelect.find(`option[value="${patientId}"]`).length > 0;
+            if (optionExists) {
+                patientSelect.val(patientId).trigger('change');
+                console.log(`${patientName} 환자가 선택되었습니다.`);
+            } else {
+                // 드롭다운 로드 완료 대기 후 재시도
+                setTimeout(function() {
+                    const retryExists = patientSelect.find(`option[value="${patientId}"]`).length > 0;
+                    if (retryExists) {
+                        patientSelect.val(patientId).trigger('change');
+                        console.log(`${patientName} 환자가 선택되었습니다. (재시도)`);
+                    } else {
+                        console.log('환자 ID가 선택 목록에 없습니다:', patientId);
+                    }
+                }, 500);
+            }
+        }
+    }, 400);
+});
+
+// 전체 중증 환자 보기 (마이페이지 환자 배정 탭으로 이동)
+function showAllSeverePatients() {
+    // 마이페이지 탭 활성화
+    $('#mypage-tab').trigger('click');
+    // 환자 배정 탭 활성화
+    setTimeout(function() {
+        $('#assign-tab').trigger('click');
+    }, 100);
+}
+
+// 페이지 로드 시 중증 환자 알림 목록 로드
+$(document).ready(function() {
+    if (typeof MEMBER_ID !== 'undefined' && MEMBER_ID) {
+        loadSeverePatientsAlert(MEMBER_ID);
+    }
+});
+</script>
+
+<!-- ========== 대시보드 JavaScript ========== -->
+<script>
+// 대시보드 차트 인스턴스
+let dashPieChart = null;
+let dashLineChart = null;
+let dashBarChart = null;
+
+// 대시보드 탭 활성화 시 데이터 로드
+$('#dashboard-tab').on('shown.bs.tab', function() {
+    loadDashboardData();
+});
+
+// 대시보드 데이터 로드 - 단일 API 호출
+function loadDashboardData() {
+    if (!MEMBER_ID) return;
+
+    $.ajax({
+        url: `/api/analyses/dashboard/${MEMBER_ID}`,
+        method: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            // 1. 요약 카드 업데이트
+            $('#dashTotalPatients').text(data.totalPatients || 0);
+            $('#dashSeverePatients').text(data.severePatients || 0);
+            $('#dashMonthlyDiaries').text(data.monthlyDiaryCount || 0);
+
+            if (data.avgHappinessIndex) {
+                $('#dashAvgHappiness').text(parseFloat(data.avgHappinessIndex).toFixed(1) + '%');
+            } else {
+                $('#dashAvgHappiness').text('-');
+            }
+
+            // 2. 전체 감정 파이 차트 업데이트
+            if (data.emotionSummary) {
+                updateDashPieChart({
+                    anxiety: parseFloat(data.emotionSummary.anxiety) || 0,
+                    sadness: parseFloat(data.emotionSummary.sadness) || 0,
+                    joy: parseFloat(data.emotionSummary.joy) || 0,
+                    anger: parseFloat(data.emotionSummary.anger) || 0,
+                    regret: parseFloat(data.emotionSummary.regret) || 0,
+                    hope: parseFloat(data.emotionSummary.hope) || 0,
+                    neutrality: parseFloat(data.emotionSummary.neutrality) || 0,
+                    tiredness: parseFloat(data.emotionSummary.tiredness) || 0,
+                    depression: parseFloat(data.emotionSummary.depression) || 0
+                });
+            }
+
+            // 3. 주간 일기 작성 추이 라인 차트 업데이트
+            if (data.weeklyDiaryCounts && data.weeklyDiaryCounts.length > 0) {
+                updateDashLineChart(data.weeklyDiaryCounts);
+            } else {
+                updateDashLineChart([]);
+            }
+
+            // 4. 월별 감정 추이 바 차트 업데이트
+            if (data.monthlyTrends && data.monthlyTrends.length > 0) {
+                updateDashBarChart(data.monthlyTrends);
+            } else {
+                updateDashBarChart([]);
+            }
+
+            // 5. 최근 일기 활동 업데이트
+            if (data.recentActivities) {
+                updateRecentActivities(data.recentActivities);
+            }
+
+            // 6. 중증 환자 테이블 업데이트
+            if (data.severePatientDetails) {
+                updateSeverePatientTable(data.severePatientDetails);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Dashboard load error:', error);
+            $('#dashTotalPatients').text('0');
+            $('#dashSeverePatients').text('0');
+            $('#dashMonthlyDiaries').text('0');
+            $('#dashAvgHappiness').text('-');
+            $('#dashRecentActivity').html('<div class="text-center text-danger p-3">데이터 로드 실패</div>');
+            $('#dashSevereTable tbody').html('<tr><td colspan="4" class="text-center text-danger">로드 실패</td></tr>');
+        }
+    });
+}
+
+// 최근 일기 활동 UI 업데이트
+function updateRecentActivities(activities) {
+    const container = $('#dashRecentActivity');
+    container.empty();
+
+    if (!activities || activities.length === 0) {
+        container.html('<div class="text-center text-muted p-3">최근 작성된 일기가 없습니다.</div>');
+        return;
+    }
+
+    activities.forEach(function(activity) {
+        const moodClass = getMoodClassFromEmotion(activity.dominantEmotion);
+        const emoji = getEmotionEmojiByName(activity.dominantEmotion);
+
+        const activityItem = `
+            <div class="activity-item ${moodClass}">
+                <div class="d-flex justify-content-between">
+                    <span class="activity-name">${activity.memberName}</span>
+                    <span class="activity-time">${activity.createdAt}</span>
+                </div>
+                <div class="activity-title">${emoji} ${activity.diaryTitle || '제목 없음'}</div>
+            </div>
+        `;
+        container.append(activityItem);
+    });
+}
+
+// 중증 환자 테이블 UI 업데이트
+function updateSeverePatientTable(patients) {
+    const tbody = $('#dashSevereTable tbody');
+    tbody.empty();
+
+    if (!patients || patients.length === 0) {
+        tbody.append('<tr><td colspan="4" class="text-center text-muted">중증 환자가 없습니다</td></tr>');
+        return;
+    }
+
+    patients.forEach(function(patient) {
+        const depressionIdx = patient.depressionIndex ? parseFloat(patient.depressionIndex).toFixed(1) + '%' : '-';
+        const lastDate = patient.lastDiaryDate || '-';
+
+        const row = `
+            <tr data-patient-id="${patient.memberId}" onclick="goToPatientStats(${patient.memberId})" style="cursor:pointer;">
+                <td><strong>${patient.memberName}</strong></td>
+                <td><span class="text-danger">${depressionIdx}</span></td>
+                <td><small class="text-muted">${lastDate}</small></td>
+                <td><span class="status-badge severe">중증</span></td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+// 감정명으로 CSS 클래스 반환
+function getMoodClassFromEmotion(emotionName) {
+    if (!emotionName) return '';
+    const classMap = {
+        '기쁨': 'mood-joy', '희망': 'mood-joy',
+        '슬픔': 'mood-sad', '우울': 'mood-depression',
+        '분노': 'mood-anger', '불안': 'mood-anxiety',
+        '후회': 'mood-sad', '피로': 'mood-sad', '중립': ''
+    };
+    return classMap[emotionName] || '';
+}
+
+// 감정명으로 이모지 반환
+function getEmotionEmojiByName(emotionName) {
+    if (!emotionName) return '';
+    const emojiMap = {
+        '기쁨': '', '희망': '', '슬픔': '', '우울': '',
+        '분노': '', '불안': '', '후회': '', '피로': '', '중립': ''
+    };
+    return emojiMap[emotionName] || '';
+}
+
+// 대시보드 파이 차트
+function updateDashPieChart(emotions) {
+    const ctx = document.getElementById('dashEmotionPieChart');
+    if (!ctx) return;
+
+    const data = {
+        labels: ['불안', '슬픔', '기쁨', '분노', '후회', '희망', '중립', '피로', '우울'],
+        datasets: [{
+            data: [
+                emotions.anxiety, emotions.sadness, emotions.joy, emotions.anger,
+                emotions.regret, emotions.hope, emotions.neutrality, emotions.tiredness, emotions.depression
+            ],
+            backgroundColor: [
+                '#FFA500', '#4169E1', '#FFD700', '#DC143C', '#9370DB',
+                '#32CD32', '#808080', '#A0522D', '#483D8B'
+            ]
+        }]
+    };
+
+    if (dashPieChart) dashPieChart.destroy();
+    dashPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: { responsive: true, maintainAspectRatio: false, legend: { position: 'right' } }
+    });
+}
+
+// 대시보드 주간 라인 차트 (실제 데이터)
+function updateDashLineChart(weeklyData) {
+    const ctx = document.getElementById('dashWeeklyLineChart');
+    if (!ctx) return;
+
+    let labels = [];
+    let counts = [];
+
+    if (weeklyData && weeklyData.length > 0) {
+        weeklyData.forEach(function(item) {
+            labels.push(item.dayLabel || item.date);
+            counts.push(item.count || 0);
+        });
+    } else {
+        labels = ['6일 전', '5일 전', '4일 전', '3일 전', '2일 전', '어제', '오늘'];
+        counts = [0, 0, 0, 0, 0, 0, 0];
+    }
+
+    const data = {
+        labels: labels,
+        datasets: [{
+            label: '일기 작성 수',
+            data: counts,
+            borderColor: '#6c5ce7',
+            backgroundColor: 'rgba(108, 92, 231, 0.2)',
+            fill: true,
+            tension: 0.4
+        }]
+    };
+
+    if (dashLineChart) dashLineChart.destroy();
+    dashLineChart = new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { yAxes: [{ ticks: { beginAtZero: true } }] }
+        }
+    });
+}
+
+// 대시보드 월별 바 차트 (실제 데이터)
+function updateDashBarChart(monthlyData) {
+    const ctx = document.getElementById('dashMonthlyBarChart');
+    if (!ctx) return;
+
+    let labels = [];
+    let happinessData = [];
+    let depressionData = [];
+
+    if (monthlyData && monthlyData.length > 0) {
+        monthlyData.forEach(function(item) {
+            labels.push(item.monthLabel || (item.month + '월'));
+            happinessData.push(parseFloat(item.happinessIndex) || 0);
+            depressionData.push(parseFloat(item.depressionIndex) || 0);
+        });
+    } else {
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const m = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            labels.push((m.getMonth() + 1) + '월');
+            happinessData.push(0);
+            depressionData.push(0);
+        }
+    }
+
+    const data = {
+        labels: labels,
+        datasets: [
+            {
+                label: '행복 지수',
+                data: happinessData,
+                backgroundColor: '#FFD700'
+            },
+            {
+                label: '우울 지수',
+                data: depressionData,
+                backgroundColor: '#4169E1'
+            }
+        ]
+    };
+
+    if (dashBarChart) dashBarChart.destroy();
+    dashBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { yAxes: [{ ticks: { beginAtZero: true, max: 100 } }] }
+        }
+    });
+}
+
+// 환자 통계 페이지로 이동
+function goToPatientStats(patientId) {
+    $('#stats-tab').trigger('click');
+    setTimeout(function() {
+        const patientSelect = $('#patientSelect');
+        if (patientSelect.find(`option[value="${patientId}"]`).length > 0) {
+            patientSelect.val(patientId).trigger('change');
+        }
+    }, 500);
+}
+
+// 유틸리티 함수들
+function getDominantEmotion(diary) {
+    const emotions = {
+        '불안': diary.anxietyRatio || 0,
+        '슬픔': diary.sadnessRatio || 0,
+        '기쁨': diary.joyRatio || 0,
+        '분노': diary.angerRatio || 0,
+        '후회': diary.regretRatio || 0,
+        '희망': diary.hopeRatio || 0,
+        '중립': diary.neutralityRatio || 0,
+        '피로': diary.tirednessRatio || 0,
+        '우울': diary.depressionRatio || 0
+    };
+    return Object.keys(emotions).reduce((a, b) => emotions[a] > emotions[b] ? a : b);
+}
+
+function getMoodClass(emotion) {
+    const classMap = {
+        '기쁨': 'mood-joy', '희망': 'mood-joy',
+        '슬픔': 'mood-sad', '우울': 'mood-depression',
+        '분노': 'mood-anger', '불안': 'mood-anxiety'
+    };
+    return classMap[emotion] || '';
+}
+
+function getEmotionEmoji(emotion) {
+    const emojiMap = {
+        '기쁨': '😊', '희망': '✨', '슬픔': '😢', '우울': '💙',
+        '분노': '🔥', '불안': '😟', '후회': '😔', '피로': '😴', '중립': '😐'
+    };
+    return emojiMap[emotion] || '📝';
+}
+</script>
+
+<!-- 외부 JavaScript 모듈 파일 (공통/마이페이지) -->
+<!-- mypage.js와 hospital.js는 인라인 스크립트와 변수 중복으로 제외 (doctor 페이지 전용 코드 사용) -->
+</body>
+</html>
